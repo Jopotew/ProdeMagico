@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(cd \"m:\\\\Archivos de programa\\\\Proyectos\\\\Github\\\\ProdeMagico\"; Get-ChildItem -Recurse -Depth 3 -Force -ErrorAction SilentlyContinue | Where-Object { -not $_.PSIsContainer } | Select-Object -ExpandProperty FullName)",
+      "Bash(git -C \"m:/Archivos de programa/Proyectos/Github/ProdeMagico\" log --oneline)",
+      "Bash(elixir --version)",
+      "Bash(mix --version)",
+      "Bash(where elixir *)",
+      "Bash(where mix *)",
+      "Bash(where node *)",
+      "Bash(where asdf *)",
+      "Bash(npm --version)",
+      "Bash(where git *)",
+      "Bash(git --version)",
+      "Bash(where gh *)",
+      "Bash(where fly *)",
+      "Bash(where flyctl *)",
+      "Bash(git -C \"m:/Archivos de programa/Proyectos/Github/ProdeMagico\" remote -v)",
+      "PowerShell(elixir --version)",
+      "PowerShell(mix --version)",
+      "PowerShell(ls \"M:\\\\Archivos de programa\\\\Instalaciones\\\\Git\\\\\")",
+      "PowerShell(docker --version 2>$null)",
+      "PowerShell(winget install --id PostgreSQL.PostgreSQL.16 --silent --accept-package-agreements --accept-source-agreements 2>&1)"
+    ]
+  }
+}

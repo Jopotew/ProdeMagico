@@ -1,0 +1,12 @@
+{
+  "coverage_options": {
+    "minimum_coverage": 80
+  },
+  "skip_files": [
+    "lib/prode_web.ex",
+    "lib/prode/application.ex",
+    "lib/prode_web/components/",
+    "lib/prode_web/layouts/",
+    "test/support/"
+  ]
+}
