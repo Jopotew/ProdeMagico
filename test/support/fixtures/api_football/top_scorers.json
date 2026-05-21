@@ -1,0 +1,56 @@
+{
+  "get": "players/topscorers",
+  "parameters": {"league": "1", "season": "2026"},
+  "errors": [],
+  "results": 1,
+  "paging": {"current": 1, "total": 1},
+  "response": [
+    {
+      "player": {
+        "id": 276,
+        "name": "K. Mbappe",
+        "firstname": "Kylian",
+        "lastname": "Mbappé",
+        "age": 27,
+        "nationality": "France",
+        "photo": "https://media.api-sports.io/football/players/276.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 2,
+            "name": "France",
+            "logo": "https://media.api-sports.io/football/teams/2.png"
+          },
+          "league": {
+            "id": 1,
+            "name": "World Cup",
+            "country": "World",
+            "season": 2026,
+            "round": null
+          },
+          "games": {
+            "appearences": 7,
+            "lineups": 7,
+            "minutes": 630,
+            "number": null,
+            "position": "Attacker",
+            "rating": "8.5",
+            "captain": false
+          },
+          "goals": {
+            "total": 8,
+            "conceded": 0,
+            "assists": 2,
+            "saves": null
+          },
+          "cards": {
+            "yellow": 1,
+            "yellowred": 0,
+            "red": 0
+          }
+        }
+      ]
+    }
+  ]
+}

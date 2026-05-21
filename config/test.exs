@@ -45,3 +45,10 @@ config :phoenix,
 
 # Oban — run jobs inline in tests (no queue, no polling)
 config :prode, Oban, testing: :inline
+
+# Use mock client; Bypass tests override api_football_base_url at runtime
+config :prode, :sports_data_client, Prode.External.MockSportsDataClient
+config :prode, :api_football_key, "test-api-key"
+
+# Don't auto-start MatchPoller in tests — sync is triggered manually
+config :prode, :start_match_poller, false

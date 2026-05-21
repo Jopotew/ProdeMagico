@@ -17,16 +17,40 @@ defmodule ProdeWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :api_authenticated do
+    plug :accepts, ["json"]
+    plug ProdeWeb.Plugs.ApiAuth
+  end
+
   scope "/", ProdeWeb do
     pipe_through :browser
 
     get "/", PageController, :home
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", ProdeWeb do
-  #   pipe_through :api
-  # end
+  # Public API endpoints
+  scope "/api/v1", ProdeWeb.Api do
+    pipe_through :api
+
+    resources "/tournaments", TournamentsController, only: [:index, :show]
+    get "/matches", MatchesController, :index
+    get "/matches/:id", MatchesController, :show
+  end
+
+  # Authenticated API endpoints
+  scope "/api/v1", ProdeWeb.Api do
+    pipe_through :api_authenticated
+
+    post "/matches/:id/predict", MatchesController, :predict
+
+    resources "/groups", GroupsController, only: [:index, :create, :show]
+    post "/groups/join", GroupsController, :join
+    get "/groups/:id/leaderboard", GroupsController, :leaderboard
+
+    get "/users/me", UsersController, :me
+    get "/users/me/predictions", UsersController, :predictions
+    post "/users/me/push-subscription", UsersController, :push_subscription
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:prode, :dev_routes) do

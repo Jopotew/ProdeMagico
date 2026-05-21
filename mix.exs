@@ -85,6 +85,9 @@ defmodule Prode.MixProject do
       {:ueberauth_google, "~> 0.12"},
       {:pbkdf2_elixir, "~> 2.0"},
 
+      # Notifications
+      {:web_push_elixir, "~> 0.3"},
+
       # Test only
       {:bypass, "~> 2.1", only: :test},
       {:mox, "~> 1.1", only: :test},

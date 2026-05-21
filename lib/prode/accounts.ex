@@ -281,6 +281,15 @@ defmodule Prode.Accounts do
     :ok
   end
 
+  ## WhatsApp preferences
+
+  @doc "Updates a user's WhatsApp phone number and opt-in status."
+  def update_whatsapp_preferences(%User{} = user, attrs) do
+    user
+    |> User.whatsapp_changeset(attrs)
+    |> Repo.update()
+  end
+
   ## Google OAuth
 
   @doc """

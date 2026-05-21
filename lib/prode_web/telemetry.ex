@@ -79,15 +79,21 @@ defmodule ProdeWeb.Telemetry do
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),
       summary("vm.total_run_queue_lengths.cpu"),
-      summary("vm.total_run_queue_lengths.io")
+      summary("vm.total_run_queue_lengths.io"),
+
+      # Prode business events
+      counter("prode.prediction.submitted.count", tags: [:tournament_id]),
+      counter("prode.prediction.rejected.count", tags: [:reason]),
+      counter("prode.points.calculated.count", tags: [:match_id]),
+      summary("prode.points.calculated.duration", unit: {:native, :millisecond}),
+      counter("prode.notification.dispatched.count", tags: [:kind, :channel]),
+      counter("prode.notification.failed.count", tags: [:kind, :channel]),
+      counter("prode.group.joined.count"),
+      counter("prode.group.created.count")
     ]
   end
 
   defp periodic_measurements do
-    [
-      # A module, function and arguments to be invoked periodically.
-      # This function must call :telemetry.execute/3 and a metric must be added above.
-      # {ProdeWeb, :count_users, []}
-    ]
+    []
   end
 end

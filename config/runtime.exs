@@ -34,6 +34,31 @@ if config_env() == :dev do
     client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
 end
 
+if config_env() != :test do
+  config :prode, :api_football_key, System.get_env("API_FOOTBALL_KEY")
+end
+
+# VAPID keys for web push notifications
+if config_env() != :test do
+  vapid_public = System.get_env("VAPID_PUBLIC_KEY")
+  vapid_private = System.get_env("VAPID_PRIVATE_KEY")
+  vapid_subject = System.get_env("VAPID_SUBJECT", "mailto:dev@prode.local")
+
+  if vapid_public && vapid_private do
+    config :web_push_elixir,
+      vapid_public_key: vapid_public,
+      vapid_private_key: vapid_private,
+      vapid_subject: vapid_subject
+  end
+end
+
+# WhatsApp Cloud API
+if config_env() != :test do
+  config :prode,
+    whatsapp_phone_number_id: System.get_env("WHATSAPP_PHONE_NUMBER_ID"),
+    whatsapp_access_token: System.get_env("WHATSAPP_ACCESS_TOKEN")
+end
+
 config :prode, ProdeWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
 if config_env() == :prod do

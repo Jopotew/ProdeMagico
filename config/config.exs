@@ -80,11 +80,23 @@ config :ueberauth, Ueberauth,
       {Ueberauth.Strategy.Google, [default_scope: "email profile", prompt: "select_account"]}
   ]
 
-# Oban queues (workers added in later days)
+# External API client — overridden per-environment in runtime.exs and test.exs
+config :prode, :api_football_key, nil
+config :prode, :sports_data_client, Prode.External.ApiFootball
+
+# Oban queues and cron schedule
 config :prode, Oban,
   repo: Prode.Repo,
   queues: [default: 10, scoring: 5, notifications: 20, external_api: 3, sync: 2],
-  plugins: [Oban.Plugins.Pruner]
+  plugins: [
+    Oban.Plugins.Pruner,
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"0 4 * * *", Prode.Workers.FixtureSyncWorker},
+       {"0 5 * * *", Prode.Workers.TopScorerSyncWorker},
+       {"*/15 * * * *", Prode.Workers.NotificationSweep}
+     ]}
+  ]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

@@ -13,6 +13,10 @@ defmodule Prode.Accounts.User do
     field :google_uid, :string
     field :display_name, :string
     field :avatar_url, :string
+    field :phone_number, :string
+    field :whatsapp_opted_in, :boolean, default: false
+    field :whatsapp_verification_code, :string
+    field :whatsapp_verification_sent_at, :utc_datetime
 
     timestamps(type: :utc_datetime)
   end
@@ -129,6 +133,12 @@ defmodule Prode.Accounts.User do
   def confirm_changeset(user) do
     now = DateTime.utc_now(:second)
     change(user, confirmed_at: now)
+  end
+
+  def whatsapp_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:phone_number, :whatsapp_opted_in, :whatsapp_verification_code, :whatsapp_verification_sent_at])
+    |> validate_format(:phone_number, ~r/^\+?[0-9\s\-]{7,20}$/, message: "invalid phone number format")
   end
 
   @doc """
