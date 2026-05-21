@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prode Master — Mundial 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#e8202a; --red-dark:#c11820; --red-soft:#fdecec; --red-tint:#fff5f5;
+    --bg:#f5f6f8; --card:#ffffff;
+    --ink:#1a1a1a; --ink-2:#2d2d2d;
+    --muted:#8a8f98; --muted-2:#b8bcc4;
+    --line:#e6e8ec; --line-soft:#eef0f3;
+    --green:#1fb866; --green-soft:#e6f7ee;
+    --gold:#e0a800; --gold-soft:#fff7d6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Inter',sans-serif;background:#d8dade;color:var(--ink);
+    -webkit-font-smoothing:antialiased;min-height:100vh;
+    display:flex;align-items:flex-start;justify-content:center;
+    padding:20px;overflow-x:hidden;
+  }
+  .phone{
+    width:100%;max-width:420px;height:880px;background:var(--bg);
+    border-radius:38px;
+    box-shadow:0 30px 80px -20px rgba(0,0,0,.35),0 0 0 10px #0a0a0a,0 0 0 11px #2a2a2a;
+    overflow:hidden;position:relative;display:flex;flex-direction:column;
+  }
+  .notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:110px;height:26px;border-radius:99px;background:#0a0a0a;z-index:50}
+  .status-bar{
+    height:44px;background:var(--red);color:#fff;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 28px 0 24px;font-size:14px;font-weight:600;flex-shrink:0;
+  }
+  .status-bar .icons{display:flex;gap:6px;align-items:center}
+  .status-bar svg{width:16px;height:16px;fill:#fff}
+
+  .header{
+    background:var(--red);padding:14px 20px 22px;color:#fff;
+    display:flex;align-items:center;justify-content:space-between;
+    position:relative;flex-shrink:0;
+  }
+  .header::after{
+    content:"";position:absolute;left:0;right:0;bottom:-12px;height:12px;
+    background:linear-gradient(180deg, rgba(232,32,42,.35), transparent);pointer-events:none;
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .trophy{width:32px;height:32px;display:grid;place-items:center}
+  .trophy svg{width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2}
+  .brand-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;letter-spacing:1.5px;line-height:1}
+  .chevron{width:24px;height:24px;display:grid;place-items:center;cursor:pointer}
+  .chevron svg{width:20px;height:20px;stroke:#fff;stroke-width:2.5;fill:none}
+
+  .page{flex:1;display:none;flex-direction:column;overflow:hidden}
+  .page.active{display:flex}
+
+  .date-selector{
+    margin:14px 16px 0;background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);
+    display:grid;grid-template-columns:48px 1fr 48px;align-items:center;
+    height:54px;overflow:hidden;flex-shrink:0;
+  }
+  .date-arrow{display:grid;place-items:center;height:100%;cursor:pointer;color:var(--red)}
+  .date-arrow svg{width:18px;height:18px;stroke:currentColor;stroke-width:2.5;fill:none}
+  .date-arrow.disabled{color:var(--muted-2);cursor:default}
+  .date-center{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    font-size:15px;font-weight:600;color:var(--ink);
+    border-left:1px solid var(--line);border-right:1px solid var(--line);
+    height:100%;cursor:pointer;
+  }
+  .date-center svg{width:14px;height:14px;stroke:var(--ink);stroke-width:2.5;fill:none}
+
+  .progress-row{padding:18px 24px 8px;flex-shrink:0}
+  .progress-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .progress-label .lbl{font-size:15px;color:var(--ink-2);font-weight:500}
+  .progress-label .count{font-size:14px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .progress-bar{height:4px;background:var(--line);border-radius:99px;overflow:hidden}
+  .progress-bar div{height:100%;background:var(--red);border-radius:99px;width:0%;transition:width .5s cubic-bezier(.34,1.56,.64,1)}
+
+  .scroll{flex:1;overflow-y:auto;padding:8px 16px 12px;-webkit-overflow-scrolling:touch}
+  .scroll::-webkit-scrollbar{width:0}
+
+  .section-title{
+    font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:1.5px;
+    color:var(--ink);text-transform:uppercase;margin:14px 6px 12px;
+  }
+
+  /* MATCH CARD */
+  .match-card{
+    background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.05);
+    padding:16px 18px;margin-bottom:12px;cursor:pointer;
+    transition:transform .2s ease, box-shadow .2s ease;position:relative;
+  }
+  .match-card:active{transform:scale(.99)}
+  .match-card.saved{box-shadow:0 1px 3px rgba(0,0,0,.05), inset 0 0 0 1.5px var(--green)}
+  .match-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+  .match-meta{font-size:13px;color:var(--muted);font-weight:500}
+  .match-meta strong{color:var(--ink-2);font-weight:600;display:block;font-size:13px}
+  .match-status{width:24px;height:24px;border:1.5px solid var(--line);border-radius:6px;display:grid;place-items:center;color:var(--muted-2);font-size:18px;font-weight:300}
+  .match-status.done{border-color:var(--green);color:var(--green);background:#fff}
+  .match-status.done svg{width:14px;height:14px;stroke:var(--green);stroke-width:3;fill:none}
+  .match-body{display:grid;grid-template-columns:1fr auto auto 1fr;align-items:center;gap:12px;padding-top:14px;border-top:1px solid var(--line-soft)}
+  .team{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .flag{width:46px;height:32px;display:grid;place-items:center;font-size:30px;line-height:1;border-radius:4px;overflow:hidden}
+  .team-code{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:1px;color:var(--ink)}
+  .score-cell{
+    width:58px;height:58px;border:1.5px dashed var(--green);border-radius:12px;
+    display:grid;place-items:center;font-family:'Barlow Condensed',sans-serif;
+    font-size:32px;font-weight:700;color:var(--ink);background:#fff;transition:all .2s ease;
+  }
+  .score-cell.empty{color:var(--muted-2)}
+  .score-cell.filled{border-style:solid;border-color:var(--green);background:var(--green-soft)}
+
+  /* Ad */
+  .ad-banner{background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.05);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
+  .ad-icon{width:42px;height:42px;border-radius:50%;background:var(--red-soft);display:grid;place-items:center;flex-shrink:0}
+  .ad-icon svg{width:22px;height:22px;fill:var(--red)}
+  .ad-content{flex:1;min-width:0}
+  .ad-row{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+  .ad-tag{font-size:9px;font-weight:700;color:var(--green);border:1px solid var(--green);padding:1px 5px;border-radius:3px;letter-spacing:.5px}
+  .ad-title{font-size:13px;color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ad-desc{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ad-btn{background:#fff;border:1.5px solid var(--red);color:var(--red);font-weight:700;font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;flex-shrink:0}
+
+  /* Candidato */
+  .candidate{background:#fff;border:1.5px solid var(--red);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin:6px 6px 14px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .candidate-icon{width:42px;height:42px;display:grid;place-items:center;flex-shrink:0}
+  .candidate-icon svg{width:36px;height:36px;fill:none;stroke:var(--red);stroke-width:1.8}
+  .candidate-text{flex:1;min-width:0}
+  .candidate-title{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:2px}
+  .candidate-sub{font-size:12px;color:var(--muted)}
+  .candidate-arrow svg{width:18px;height:18px;stroke:var(--ink-2);stroke-width:2.5;fill:none}
+
+  /* TORNEOS */
+  .torneo-card{background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.05);padding:0;margin-bottom:12px;overflow:hidden;cursor:pointer;transition:transform .2s}
+  .torneo-card:active{transform:scale(.99)}
+  .torneo-banner{height:88px;background:linear-gradient(135deg, var(--red) 0%, #ff5a4b 100%);position:relative;display:flex;align-items:center;padding:0 20px;color:#fff;overflow:hidden}
+  .torneo-banner.mundial{background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%)}
+  .torneo-banner.copa{background:linear-gradient(135deg,#065f46 0%,#10b981 100%)}
+  .torneo-banner.liga{background:linear-gradient(135deg,#7c2d12 0%,#ea580c 100%)}
+  .torneo-banner::before{content:"";position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.12)}
+  .torneo-banner::after{content:"";position:absolute;right:30px;bottom:-40px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.08)}
+  .torneo-title{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;letter-spacing:1.5px;line-height:1;position:relative;z-index:1}
+  .torneo-sub{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;opacity:.85;margin-top:4px;position:relative;z-index:1}
+  .torneo-info{padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
+  .torneo-stat{display:flex;flex-direction:column;gap:1px}
+  .torneo-stat .v{font-family:'Barlow Condensed';font-size:18px;font-weight:700;color:var(--ink)}
+  .torneo-stat .l{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:600}
+  .torneo-badge{background:var(--red-soft);color:var(--red);font-size:11px;font-weight:700;padding:5px 10px;border-radius:99px}
+  .torneo-badge.live{background:var(--green-soft);color:var(--green)}
+  .torneo-badge.live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:5px;vertical-align:middle;animation:blink 1.4s ease-in-out infinite}
+  @keyframes blink{50%{opacity:.4}}
+  .empty-card{background:#fff;border-radius:14px;border:1.5px dashed var(--line);padding:24px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer}
+  .empty-card svg{width:32px;height:32px;stroke:var(--red);stroke-width:1.5;fill:none}
+  .empty-card .t{font-size:14px;font-weight:600;color:var(--ink)}
+  .empty-card .s{font-size:12px;color:var(--muted)}
+
+  /* POSICIONES */
+  .tabs-segment{margin:14px 16px 8px;background:#fff;border-radius:12px;padding:4px;display:grid;grid-template-columns:1fr 1fr;box-shadow:0 1px 3px rgba(0,0,0,.04);flex-shrink:0}
+  .seg-btn{padding:10px;border:none;background:transparent;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);border-radius:9px;transition:all .25s ease}
+  .seg-btn.active{background:var(--red);color:#fff;box-shadow:0 2px 8px rgba(232,32,42,.3)}
+  .leaderboard{background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:12px;overflow:hidden}
+  .lb-row{display:grid;grid-template-columns:34px 32px 1fr auto;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line-soft)}
+  .lb-row:last-child{border-bottom:none}
+  .lb-row.me{background:var(--red-tint)}
+  .lb-pos{font-family:'Barlow Condensed';font-size:18px;font-weight:700;color:var(--muted);text-align:center}
+  .lb-avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff}
+  .lb-name{font-size:14px;font-weight:600;color:var(--ink)}
+  .lb-name small{display:block;font-size:11px;color:var(--muted);font-weight:500;margin-top:1px}
+  .lb-pts{font-family:'Barlow Condensed';font-size:20px;font-weight:700;color:var(--ink);text-align:right}
+  .lb-pts small{display:block;font-size:9px;color:var(--muted);letter-spacing:1px;font-weight:600;text-transform:uppercase}
+  .podium{background:linear-gradient(180deg, #fff 0%, var(--bg) 100%);padding:18px 12px 8px;display:flex;align-items:flex-end;justify-content:center;gap:8px;border-radius:14px 14px 0 0}
+  .pod{flex:1;max-width:90px;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .pod-av{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-size:18px;font-weight:700;color:#fff;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+  .pod-name{font-size:11px;font-weight:600;color:var(--ink);text-align:center;line-height:1.2}
+  .pod-pts{font-family:'Barlow Condensed';font-size:18px;font-weight:700;color:var(--ink)}
+  .pod-bar{width:100%;display:grid;place-items:center;color:#fff;font-family:'Barlow Condensed';font-size:18px;font-weight:800;border-radius:8px 8px 0 0;margin-top:4px}
+  .pod.first .pod-bar{background:linear-gradient(180deg,#fbbf24,#d4a200);height:64px}
+  .pod.first .pod-av{background:linear-gradient(135deg,#fbbf24,#d4a200)}
+  .pod.second .pod-bar{background:linear-gradient(180deg,#cbd5e1,#8a8f98);height:48px}
+  .pod.second .pod-av{background:linear-gradient(135deg,#cbd5e1,#8a8f98)}
+  .pod.third .pod-bar{background:linear-gradient(180deg,#fbb78a,#b96a32);height:36px}
+  .pod.third .pod-av{background:linear-gradient(135deg,#fbb78a,#b96a32)}
+
+  /* FIXTURE */
+  .fx-day-group{margin-bottom:14px}
+  .fx-day-title{font-size:13px;font-weight:600;color:var(--ink-2);margin:0 6px 8px;text-transform:capitalize}
+  .fx-list{background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.05);overflow:hidden}
+  .fx-row{display:grid;grid-template-columns:1fr 70px 1fr;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line-soft)}
+  .fx-row:last-child{border-bottom:none}
+  .fx-team-l{display:flex;align-items:center;gap:10px;justify-content:flex-start}
+  .fx-team-v{display:flex;align-items:center;gap:10px;justify-content:flex-end}
+  .fx-flag{width:24px;height:18px;font-size:22px;line-height:1;display:grid;place-items:center}
+  .fx-name{font-size:13px;font-weight:600;color:var(--ink)}
+  .fx-time{background:var(--bg);font-size:13px;font-weight:700;color:var(--ink);padding:6px 0;border-radius:8px;text-align:center;font-variant-numeric:tabular-nums}
+  .fx-time.live{background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;gap:5px}
+  .fx-time.live::before{content:"";width:5px;height:5px;border-radius:50%;background:#fff;animation:blink 1.4s infinite}
+  .fx-time.done{background:var(--ink);color:#fff}
+
+  /* MÁS */
+  .profile-card{background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.05);padding:14px 16px;margin:18px 16px 14px;display:flex;align-items:center;gap:14px;cursor:pointer}
+  .profile-av{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#9ca3af,#6b7280);display:grid;place-items:center;color:#fff;flex-shrink:0}
+  .profile-av svg{width:30px;height:30px;stroke:#fff;stroke-width:2;fill:none}
+  .profile-info{flex:1;min-width:0}
+  .profile-name{font-size:16px;font-weight:700;color:var(--ink)}
+  .profile-mail{font-size:13px;color:var(--muted);margin:2px 0 4px}
+  .profile-link{font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px}
+  .plus-card{background:linear-gradient(180deg,#fff 60%,var(--red-tint));border:1.5px solid var(--line);border-radius:14px;padding:18px;margin:0 16px 14px}
+  .plus-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .plus-head .name{font-size:18px;font-weight:700;color:var(--ink)}
+  .plus-tag{background:var(--red-soft);color:var(--red);font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px}
+  .plus-desc{font-size:13px;color:var(--ink-2);line-height:1.5;margin-bottom:14px}
+  .plus-btn{width:100%;background:#fff;border:1.5px solid var(--gold);color:var(--gold);padding:12px;border-radius:11px;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .2s ease}
+  .plus-btn:hover{background:var(--gold-soft)}
+  .plus-btn svg.crown{width:18px;height:18px;fill:var(--gold)}
+  .menu-card{background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.05);margin:0 16px 14px;overflow:hidden}
+  .menu-item{display:flex;align-items:center;gap:14px;padding:16px;cursor:pointer;border-bottom:1px solid var(--line-soft);transition:background .15s}
+  .menu-item:hover{background:var(--bg)}
+  .menu-item:last-child{border-bottom:none}
+  .menu-icon{width:32px;height:32px;display:grid;place-items:center;color:var(--red);flex-shrink:0}
+  .menu-icon svg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none}
+  .menu-text{flex:1}
+  .menu-text .t{font-size:15px;font-weight:700;color:var(--ink)}
+  .menu-text .s{font-size:12px;color:var(--muted);margin-top:1px}
+  .menu-item .arrow svg{width:18px;height:18px;stroke:var(--ink-2);stroke-width:2.5;fill:none}
+  .app-version{text-align:center;padding:20px 16px;color:var(--muted);font-size:12px}
+  .app-version .v{font-weight:600;margin-bottom:2px;color:var(--ink-2)}
+
+  /* BOTTOM NAV */
+  .bottom-nav{background:#fff;border-top:1px solid var(--line);padding:8px 6px 18px;display:grid;grid-template-columns:repeat(5,1fr);flex-shrink:0}
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px;cursor:pointer;color:var(--ink-2);transition:color .2s}
+  .nav-item svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.7;fill:none}
+  .nav-item .lbl{font-size:11px;font-weight:500}
+  .nav-item.active{color:var(--red)}
+  .nav-item.active svg{stroke:var(--red)}
+
+  /* SHEET */
+  .backdrop{position:absolute;inset:0;background:rgba(15,15,20,.45);opacity:0;pointer-events:none;transition:opacity .3s ease;z-index:60}
+  .backdrop.open{opacity:1;pointer-events:auto}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;padding:14px 20px 22px;box-shadow:0 -10px 40px rgba(0,0,0,.15);transform:translateY(100%);transition:transform .4s cubic-bezier(.34,1.2,.64,1);z-index:70;max-height:78%;display:flex;flex-direction:column}
+  .sheet.open{transform:translateY(0)}
+  .sheet-handle{width:42px;height:5px;border-radius:99px;background:#d4d6db;margin:0 auto 16px}
+  .popular{background:var(--bg);border-radius:14px;padding:14px;margin-bottom:18px}
+  .popular-title{display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;color:var(--ink-2);font-weight:600;margin-bottom:10px}
+  .popular-title svg.crown{width:18px;height:18px;fill:var(--gold)}
+  .popular-title svg.info{width:14px;height:14px;stroke:var(--muted);stroke-width:2;fill:none}
+  .popular-options{display:flex;justify-content:center;gap:14px}
+  .popular-opt{background:#fff;border:1px solid var(--line);border-radius:99px;padding:6px 14px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:62px;cursor:pointer}
+  .popular-opt svg.lock{width:14px;height:14px;stroke:var(--muted);stroke-width:2;fill:none}
+  .popular-opt .pct{font-size:12px;color:var(--muted);font-weight:600}
+  .editor{display:grid;grid-template-columns:1fr auto auto 1fr;align-items:center;gap:8px;padding:8px 0 18px}
+  .editor .team{gap:10px}
+  .editor .flag{width:54px;height:38px;font-size:36px}
+  .editor .team-code{font-size:22px}
+  .stepper{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .step-btn{width:52px;height:42px;border-radius:12px;border:none;cursor:pointer;background:var(--ink);color:#fff;font-size:20px;font-weight:700;display:grid;place-items:center;transition:transform .15s ease, opacity .2s ease;user-select:none}
+  .step-btn:active{transform:scale(.94)}
+  .step-btn.minus{background:var(--ink-2);font-size:24px;line-height:0}
+  .step-btn:disabled{opacity:.35;cursor:default}
+  .score-big{width:62px;height:62px;border-radius:14px;border:2px solid var(--line);background:#fff;display:grid;place-items:center;font-family:'Barlow Condensed',sans-serif;font-size:38px;font-weight:700;color:var(--ink)}
+  .score-big.has-value{border-color:var(--green)}
+  .save-btn{width:100%;background:var(--red);color:#fff;border:none;height:54px;border-radius:14px;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s ease;box-shadow:0 6px 18px -4px rgba(232,32,42,.45);text-transform:uppercase}
+  .save-btn:disabled{background:#dcdee3;color:#fff;cursor:default;box-shadow:none}
+  .save-btn:not(:disabled):hover{background:var(--red-dark)}
+  .save-btn:not(:disabled):active{transform:translateY(1px)}
+
+  /* TOAST */
+  .toast{position:absolute;top:60px;left:14px;right:14px;background:#fff;border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 28px rgba(0,0,0,.15);transform:translateY(-120%);transition:transform .4s cubic-bezier(.34,1.56,.64,1);z-index:80}
+  .toast.show{transform:translateY(0)}
+  .toast-icon{width:32px;height:32px;border-radius:50%;border:2px solid var(--green);display:grid;place-items:center;flex-shrink:0}
+  .toast-icon svg{width:16px;height:16px;stroke:var(--green);stroke-width:3;fill:none}
+  .toast-text{font-size:16px;font-weight:600;color:var(--ink)}
+
+  @keyframes fade-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .page.active .match-card,
+  .page.active .torneo-card,
+  .page.active .leaderboard,
+  .page.active .fx-day-group,
+  .page.active .menu-card,
+  .page.active .profile-card,
+  .page.active .plus-card{animation:fade-in .4s ease both}
+  .page.active .match-card:nth-child(2){animation-delay:.04s}
+  .page.active .match-card:nth-child(3){animation-delay:.08s}
+  .page.active .match-card:nth-child(4){animation-delay:.12s}
+
+  @keyframes save-pulse{0%{box-shadow:0 0 0 0 rgba(31,184,102,.4)}100%{box-shadow:0 0 0 14px rgba(31,184,102,0)}}
+  .pulse-save{animation:save-pulse .7s ease-out}
+
+  @media (max-width: 460px){
+    body{padding:0;background:var(--bg)}
+    .phone{max-width:none;height:100vh;border-radius:0;box-shadow:none}
+    .notch{display:none}
+    .status-bar{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="status-bar">
+    <span>9:41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M2 17h2v3H2zm4-3h2v6H6zm4-3h2v9h-2zm4-3h2v12h-2zm4-4h2v16h-2z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 3C7 3 2.7 5.1 0 8.5L12 24 24 8.5C21.3 5.1 17 3 12 3z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M17 4h-2V2H9v2H7c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 14H8V6h8v12z"/></svg>
+    </div>
+  </div>
+
+  <div class="header">
+    <div class="brand">
+      <div class="trophy">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+          <path d="M4 22h16"/>
+          <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+          <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+          <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+        </svg>
+      </div>
+      <div class="brand-title" id="brandTitle">MUNDIAL 2026</div>
+    </div>
+    <div class="chevron"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+  </div>
+
+  <!-- TORNEOS -->
+  <div class="page" data-page="torneos">
+    <div class="scroll" style="padding-top:18px">
+      <div class="section-title">Mis torneos</div>
+      <div class="torneo-card">
+        <div class="torneo-banner mundial">
+          <div>
+            <div class="torneo-title">MUNDIAL 2026</div>
+            <div class="torneo-sub">USA · México · Canadá</div>
+          </div>
+        </div>
+        <div class="torneo-info">
+          <div class="torneo-stat"><span class="v">24</span><span class="l">Partidos</span></div>
+          <div class="torneo-stat"><span class="v">1/6</span><span class="l">Pronost.</span></div>
+          <div class="torneo-stat"><span class="v">14°</span><span class="l">Posición</span></div>
+          <div class="torneo-badge live">EN VIVO</div>
+        </div>
+      </div>
+      <div class="torneo-card">
+        <div class="torneo-banner copa">
+          <div>
+            <div class="torneo-title">COPA AMÉRICA</div>
+            <div class="torneo-sub">Ronda final</div>
+          </div>
+        </div>
+        <div class="torneo-info">
+          <div class="torneo-stat"><span class="v">16</span><span class="l">Partidos</span></div>
+          <div class="torneo-stat"><span class="v">16/16</span><span class="l">Pronost.</span></div>
+          <div class="torneo-stat"><span class="v">3°</span><span class="l">Posición</span></div>
+          <div class="torneo-badge">FINALIZADO</div>
+        </div>
+      </div>
+      <div class="torneo-card">
+        <div class="torneo-banner liga">
+          <div>
+            <div class="torneo-title">LIGA AMIGOS</div>
+            <div class="torneo-sub">Temporada 2026</div>
+          </div>
+        </div>
+        <div class="torneo-info">
+          <div class="torneo-stat"><span class="v">38</span><span class="l">Partidos</span></div>
+          <div class="torneo-stat"><span class="v">12/38</span><span class="l">Pronost.</span></div>
+          <div class="torneo-stat"><span class="v">7°</span><span class="l">Posición</span></div>
+          <div class="torneo-badge live">EN CURSO</div>
+        </div>
+      </div>
+      <div class="section-title">Disponibles</div>
+      <div class="empty-card">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <div class="t">Unirme a un torneo</div>
+        <div class="s">Ingresá un código o explorá torneos públicos</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POSICIONES -->
+  <div class="page" data-page="posiciones">
+    <div class="tabs-segment">
+      <button class="seg-btn active">General</button>
+      <button class="seg-btn">Por fecha</button>
+    </div>
+    <div class="scroll" style="padding-top:8px">
+      <div class="leaderboard">
+        <div class="podium">
+          <div class="pod second">
+            <div class="pod-av">MR</div>
+            <div class="pod-name">María Ruiz</div>
+            <div class="pod-pts">142</div>
+            <div class="pod-bar">2</div>
+          </div>
+          <div class="pod first">
+            <div class="pod-av">CG</div>
+            <div class="pod-name">Carlos G.</div>
+            <div class="pod-pts">158</div>
+            <div class="pod-bar">1</div>
+          </div>
+          <div class="pod third">
+            <div class="pod-av">LF</div>
+            <div class="pod-name">Lucía F.</div>
+            <div class="pod-pts">138</div>
+            <div class="pod-bar">3</div>
+          </div>
+        </div>
+        <div class="lb-row">
+          <div class="lb-pos">4</div>
+          <div class="lb-avatar" style="background:linear-gradient(135deg,#3b82f6,#1e40af)">AN</div>
+          <div class="lb-name">Andrés Núñez<small>14 aciertos · 2 exactos</small></div>
+          <div class="lb-pts">131<small>PTS</small></div>
+        </div>
+        <div class="lb-row">
+          <div class="lb-pos">5</div>
+          <div class="lb-avatar" style="background:linear-gradient(135deg,#a855f7,#6b21a8)">SP</div>
+          <div class="lb-name">Sofía Paredes<small>13 aciertos · 1 exacto</small></div>
+          <div class="lb-pts">125<small>PTS</small></div>
+        </div>
+        <div class="lb-row">
+          <div class="lb-pos">6</div>
+          <div class="lb-avatar" style="background:linear-gradient(135deg,#f97316,#c2410c)">DV</div>
+          <div class="lb-name">Diego Vega<small>13 aciertos · 0 exactos</small></div>
+          <div class="lb-pts">119<small>PTS</small></div>
+        </div>
+        <div class="lb-row">
+          <div class="lb-pos">7</div>
+          <div class="lb-avatar" style="background:linear-gradient(135deg,#10b981,#047857)">PG</div>
+          <div class="lb-name">Paula G.<small>12 aciertos · 2 exactos</small></div>
+          <div class="lb-pts">114<small>PTS</small></div>
+        </div>
+        <div class="lb-row me">
+          <div class="lb-pos">14</div>
+          <div class="lb-avatar" style="background:linear-gradient(135deg,#e8202a,#c11820)">JM</div>
+          <div class="lb-name">Juan Maletti (Tú)<small>9 aciertos · 1 exacto</small></div>
+          <div class="lb-pts">82<small>PTS</small></div>
+        </div>
+        <div class="lb-row">
+          <div class="lb-pos">15</div>
+          <div class="lb-avatar" style="background:linear-gradient(135deg,#06b6d4,#155e75)">RC</div>
+          <div class="lb-name">Ricardo C.<small>8 aciertos · 1 exacto</small></div>
+          <div class="lb-pts">78<small>PTS</small></div>
+        </div>
+        <div class="lb-row">
+          <div class="lb-pos">16</div>
+          <div class="lb-avatar" style="background:linear-gradient(135deg,#ec4899,#9d174d)">EM</div>
+          <div class="lb-name">Elena Mora<small>8 aciertos · 0 exactos</small></div>
+          <div class="lb-pts">71<small>PTS</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRONOSTICOS (default) -->
+  <div class="page active" data-page="pronosticos">
+    <div class="date-selector">
+      <div class="date-arrow disabled"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+      <div class="date-center">
+        <span>Grupos - Fecha 1</span>
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="date-arrow" style="color:var(--red)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </div>
+    <div class="progress-row">
+      <div class="progress-label">
+        <span class="lbl">Pronósticos</span>
+        <span class="count" id="counter">0/6</span>
+      </div>
+      <div class="progress-bar"><div id="bar"></div></div>
+    </div>
+    <div class="scroll">
+      <div class="candidate" onclick="showToastMsg('Seleccioná un candidato')">
+        <div class="candidate-icon">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M5 6 12 2 19 6 17 14 12 17 7 14 Z" stroke-linejoin="round"/>
+            <path d="M7 14 5 22 12 19 19 22 17 14" stroke-linejoin="round"/>
+            <circle cx="12" cy="9" r="2.5"/>
+          </svg>
+        </div>
+        <div class="candidate-text">
+          <div class="candidate-title">Selecciona Candidato</div>
+          <div class="candidate-sub">Agrégalo hasta el 24/06 15:00</div>
+        </div>
+        <div class="candidate-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+      <div class="section-title">Próximos partidos</div>
+
+      <div class="match-card" data-id="1" onclick="openSheet(this)">
+        <div class="match-head"><div class="match-meta"><strong>jue. 11/06 · 16:00</strong>Grupo A</div><div class="match-status">−</div></div>
+        <div class="match-body">
+          <div class="team"><div class="flag">🇲🇽</div><div class="team-code">MEX</div></div>
+          <div class="score-cell empty">—</div>
+          <div class="score-cell empty">—</div>
+          <div class="team"><div class="flag">🇿🇦</div><div class="team-code">SUD</div></div>
+        </div>
+      </div>
+
+      <div class="ad-banner">
+        <div class="ad-icon"><svg viewBox="0 0 24 24"><path d="M12 2l2.39 7.36H22l-6.2 4.51 2.37 7.36L12 16.72l-6.17 4.51 2.37-7.36L2 9.36h7.61z"/></svg></div>
+        <div class="ad-content">
+          <div class="ad-row"><span class="ad-tag">Ad</span><span class="ad-title">Lenovo Yoga 7i 2-en-1 Gen 10</span></div>
+          <div class="ad-desc">$ 2.929.999 · Color Luna Grey, 14"</div>
+        </div>
+        <button class="ad-btn">Abrir</button>
+      </div>
+
+      <div class="match-card" data-id="2" onclick="openSheet(this)">
+        <div class="match-head"><div class="match-meta"><strong>jue. 11/06 · 23:00</strong>Grupo A</div><div class="match-status">−</div></div>
+        <div class="match-body">
+          <div class="team"><div class="flag">🇰🇷</div><div class="team-code">KOR</div></div>
+          <div class="score-cell empty">—</div>
+          <div class="score-cell empty">—</div>
+          <div class="team"><div class="flag">🇨🇿</div><div class="team-code">RCH</div></div>
+        </div>
+      </div>
+
+      <div class="match-card" data-id="3" onclick="openSheet(this)">
+        <div class="match-head"><div class="match-meta"><strong>vie. 12/06 · 16:00</strong>Grupo B</div><div class="match-status">−</div></div>
+        <div class="match-body">
+          <div class="team"><div class="flag">🇨🇦</div><div class="team-code">CAN</div></div>
+          <div class="score-cell empty">—</div>
+          <div class="score-cell empty">—</div>
+          <div class="team"><div class="flag">🇧🇦</div><div class="team-code">BIH</div></div>
+        </div>
+      </div>
+
+      <div class="match-card" data-id="4" onclick="openSheet(this)">
+        <div class="match-head"><div class="match-meta"><strong>vie. 12/06 · 22:00</strong>Grupo B</div><div class="match-status">−</div></div>
+        <div class="match-body">
+          <div class="team"><div class="flag">🇺🇸</div><div class="team-code">USA</div></div>
+          <div class="score-cell empty">—</div>
+          <div class="score-cell empty">—</div>
+          <div class="team"><div class="flag">🇵🇾</div><div class="team-code">PAR</div></div>
+        </div>
+      </div>
+
+      <div class="match-card" data-id="5" onclick="openSheet(this)">
+        <div class="match-head"><div class="match-meta"><strong>sáb. 13/06 · 16:00</strong>Grupo C</div><div class="match-status">−</div></div>
+        <div class="match-body">
+          <div class="team"><div class="flag">🇦🇷</div><div class="team-code">ARG</div></div>
+          <div class="score-cell empty">—</div>
+          <div class="score-cell empty">—</div>
+          <div class="team"><div class="flag">🇲🇦</div><div class="team-code">MAR</div></div>
+        </div>
+      </div>
+
+      <div class="match-card" data-id="6" onclick="openSheet(this)">
+        <div class="match-head"><div class="match-meta"><strong>sáb. 13/06 · 22:00</strong>Grupo C</div><div class="match-status">−</div></div>
+        <div class="match-body">
+          <div class="team"><div class="flag">🇪🇸</div><div class="team-code">ESP</div></div>
+          <div class="score-cell empty">—</div>
+          <div class="score-cell empty">—</div>
+          <div class="team"><div class="flag">🇯🇵</div><div class="team-code">JPN</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIXTURE -->
+  <div class="page" data-page="fixture">
+    <div class="date-selector">
+      <div class="date-arrow disabled"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+      <div class="date-center"><span>Grupos - Fecha 1</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+      <div class="date-arrow" style="color:var(--red)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </div>
+    <div class="scroll" style="padding-top:14px">
+      <div class="fx-day-group">
+        <div class="fx-day-title">jueves 11 de junio</div>
+        <div class="fx-list">
+          <div class="fx-row">
+            <div class="fx-team-l"><div class="fx-flag">🇲🇽</div><div class="fx-name">México</div></div>
+            <div class="fx-time live"><span>1-0</span></div>
+            <div class="fx-team-v"><div class="fx-name">Sudáfrica</div><div class="fx-flag">🇿🇦</div></div>
+          </div>
+          <div class="fx-row">
+            <div class="fx-team-l"><div class="fx-flag">🇰🇷</div><div class="fx-name">R. de Corea</div></div>
+            <div class="fx-time">23:00</div>
+            <div class="fx-team-v"><div class="fx-name">R. Checa</div><div class="fx-flag">🇨🇿</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="fx-day-group">
+        <div class="fx-day-title">viernes 12 de junio</div>
+        <div class="fx-list">
+          <div class="fx-row">
+            <div class="fx-team-l"><div class="fx-flag">🇨🇦</div><div class="fx-name">Canadá</div></div>
+            <div class="fx-time">16:00</div>
+            <div class="fx-team-v"><div class="fx-name">Bosnia-Herz.</div><div class="fx-flag">🇧🇦</div></div>
+          </div>
+          <div class="fx-row">
+            <div class="fx-team-l"><div class="fx-flag">🇺🇸</div><div class="fx-name">USA</div></div>
+            <div class="fx-time">22:00</div>
+            <div class="fx-team-v"><div class="fx-name">Paraguay</div><div class="fx-flag">🇵🇾</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="fx-day-group">
+        <div class="fx-day-title">sábado 13 de junio</div>
+        <div class="fx-list">
+          <div class="fx-row">
+            <div class="fx-team-l"><div class="fx-flag">🇦🇷</div><div class="fx-name">Argentina</div></div>
+            <div class="fx-time">16:00</div>
+            <div class="fx-team-v"><div class="fx-name">Marruecos</div><div class="fx-flag">🇲🇦</div></div>
+          </div>
+          <div class="fx-row">
+            <div class="fx-team-l"><div class="fx-flag">🇪🇸</div><div class="fx-name">España</div></div>
+            <div class="fx-time">22:00</div>
+            <div class="fx-team-v"><div class="fx-name">Japón</div><div class="fx-flag">🇯🇵</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="fx-day-group">
+        <div class="fx-day-title">domingo 14 de junio</div>
+        <div class="fx-list">
+          <div class="fx-row">
+            <div class="fx-team-l"><div class="fx-flag">🇩🇪</div><div class="fx-name">Alemania</div></div>
+            <div class="fx-time">16:00</div>
+            <div class="fx-team-v"><div class="fx-name">Egipto</div><div class="fx-flag">🇪🇬</div></div>
+          </div>
+          <div class="fx-row">
+            <div class="fx-team-l"><div class="fx-flag">🇧🇷</div><div class="fx-name">Brasil</div></div>
+            <div class="fx-time">22:00</div>
+            <div class="fx-team-v"><div class="fx-name">Australia</div><div class="fx-flag">🇦🇺</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAS -->
+  <div class="page" data-page="mas">
+    <div class="scroll" style="padding:0">
+      <div class="profile-card" onclick="showToastMsg('Abrir perfil')">
+        <div class="profile-av">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2"/></svg>
+        </div>
+        <div class="profile-info">
+          <div class="profile-name">Juan Peton Maletti</div>
+          <div class="profile-mail">juanpimale9@gmail.com</div>
+          <div class="profile-link">Ver Perfil</div>
+        </div>
+        <div class="candidate-arrow"><svg viewBox="0 0 24 24" stroke="#e8202a" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+
+      <div class="plus-card">
+        <div class="plus-head">
+          <span class="name">Prode Master</span>
+          <span class="plus-tag">PLUS</span>
+        </div>
+        <div class="plus-desc">Sin anuncios, más funciones y estadísticas avanzadas para destacar.</div>
+        <button class="plus-btn">
+          <svg class="crown" viewBox="0 0 24 24"><path d="M3 8 7 12 12 5 17 12 21 8 19 18 5 18 Z"/></svg>
+          Ver beneficios
+        </button>
+      </div>
+
+      <div class="menu-card">
+        <div class="menu-item" onclick="showToastMsg('Abrir configuración')">
+          <div class="menu-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+          <div class="menu-text"><div class="t">Configuración</div><div class="s">Ajustes de la aplicación</div></div>
+          <div class="arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="menu-item" onclick="showToastMsg('Abrir modo de juego')">
+          <div class="menu-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+          <div class="menu-text"><div class="t">Modo de Juego</div><div class="s">Instrucciones y reglas</div></div>
+          <div class="arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="menu-item" onclick="showToastMsg('Notificaciones')">
+          <div class="menu-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+          <div class="menu-text"><div class="t">Notificaciones</div><div class="s">Recordatorios y alertas</div></div>
+          <div class="arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="menu-item" onclick="showToastMsg('Compartir')">
+          <div class="menu-icon"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+          <div class="menu-text"><div class="t">Invitar amigos</div><div class="s">Compartí Prode Master</div></div>
+          <div class="arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>
+
+      <div class="menu-card">
+        <div class="menu-item" onclick="showToastMsg('Cerrando sesión...')">
+          <div class="menu-icon"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
+          <div class="menu-text"><div class="t">Cerrar Sesión</div></div>
+        </div>
+      </div>
+
+      <div class="app-version">
+        <div class="v">3.1.0 (30060)</div>
+        <div>Prode Master</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-item" data-tab="torneos">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+        <path d="M4 22h16"/>
+        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+      </svg>
+      <span class="lbl">Torneos</span>
+    </div>
+    <div class="nav-item" data-tab="posiciones">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="14" width="5" height="7" rx="1"/>
+        <rect x="9.5" y="9" width="5" height="12" rx="1"/>
+        <rect x="16" y="11" width="5" height="10" rx="1"/>
+        <path d="M12 7 12 3 M10 5 14 5"/>
+      </svg>
+      <span class="lbl">Posiciones</span>
+    </div>
+    <div class="nav-item active" data-tab="pronosticos">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2.5" y="3.5" width="19" height="17" rx="3"/>
+        <line x1="2.5" y1="12" x2="21.5" y2="12" transform="rotate(-30 12 12)"/>
+        <line x1="14" y1="7" x2="18" y2="7"/>
+        <line x1="16" y1="5" x2="16" y2="9"/>
+      </svg>
+      <span class="lbl">Pronósticos</span>
+    </div>
+    <div class="nav-item" data-tab="fixture">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="5" width="18" height="16" rx="2"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+        <line x1="8" y1="3" x2="8" y2="7"/>
+        <line x1="16" y1="3" x2="16" y2="7"/>
+      </svg>
+      <span class="lbl">Fixture</span>
+    </div>
+    <div class="nav-item" data-tab="mas">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/>
+        <circle cx="7" cy="12" r="1" fill="currentColor"/>
+        <circle cx="12" cy="12" r="1" fill="currentColor"/>
+        <circle cx="17" cy="12" r="1" fill="currentColor"/>
+      </svg>
+      <span class="lbl">Más</span>
+    </div>
+  </div>
+
+  <div class="backdrop" id="backdrop" onclick="closeSheet()"></div>
+
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <div class="popular">
+      <div class="popular-title">
+        <svg class="crown" viewBox="0 0 24 24"><path d="M3 8 7 12 12 5 17 12 21 8 19 18 5 18 Z"/></svg>
+        <span>Pronósticos populares</span>
+        <svg class="info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="10" x2="12" y2="16"/><circle cx="12" cy="7.5" r=".5" fill="currentColor"/></svg>
+      </div>
+      <div class="popular-options">
+        <div class="popular-opt"><svg class="lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span class="pct">23%</span></div>
+        <div class="popular-opt"><svg class="lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span class="pct">27%</span></div>
+        <div class="popular-opt"><svg class="lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span class="pct">19%</span></div>
+      </div>
+    </div>
+    <div class="editor">
+      <div class="team"><div class="flag" id="sheet-flag-l">🇲🇽</div><div class="team-code" id="sheet-code-l">MEX</div></div>
+      <div class="stepper">
+        <button class="step-btn" onclick="step('l',1)">+</button>
+        <div class="score-big" id="sheet-score-l">—</div>
+        <button class="step-btn minus" onclick="step('l',-1)">−</button>
+      </div>
+      <div class="stepper">
+        <button class="step-btn" onclick="step('v',1)">+</button>
+        <div class="score-big" id="sheet-score-v">—</div>
+        <button class="step-btn minus" onclick="step('v',-1)">−</button>
+      </div>
+      <div class="team"><div class="flag" id="sheet-flag-v">🇿🇦</div><div class="team-code" id="sheet-code-v">SUD</div></div>
+    </div>
+    <button class="save-btn" id="saveBtn" onclick="saveCurrent()" disabled>GUARDAR</button>
+  </div>
+
+  <div class="toast" id="toast">
+    <div class="toast-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="toast-text" id="toastText">Pronóstico guardado</div>
+  </div>
+</div>
+
+<script>
+  const titles = {
+    torneos: 'MIS TORNEOS',
+    posiciones: 'POSICIONES',
+    pronosticos: 'MUNDIAL 2026',
+    fixture: 'MUNDIAL 2026',
+    mas: 'MI CUENTA'
+  };
+
+  document.querySelectorAll('.nav-item').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      const tab = item.dataset.tab;
+      document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+      item.classList.add('active');
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.querySelector('.page[data-page="'+tab+'"]').classList.add('active');
+      document.getElementById('brandTitle').textContent = titles[tab];
+      document.querySelectorAll('.page .scroll').forEach(s=>s.scrollTop=0);
+    });
+  });
+
+  document.querySelectorAll('.seg-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      b.parentElement.querySelectorAll('.seg-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+
+  let currentCard = null;
+  let scoreL = null, scoreV = null;
+  const savedScores = {};
+
+  function openSheet(card){
+    currentCard = card;
+    const id = card.dataset.id;
+    const teams = card.querySelectorAll('.team');
+    document.getElementById('sheet-flag-l').textContent = teams[0].querySelector('.flag').textContent;
+    document.getElementById('sheet-code-l').textContent = teams[0].querySelector('.team-code').textContent;
+    document.getElementById('sheet-flag-v').textContent = teams[1].querySelector('.flag').textContent;
+    document.getElementById('sheet-code-v').textContent = teams[1].querySelector('.team-code').textContent;
+    if(savedScores[id]){ scoreL = savedScores[id].l; scoreV = savedScores[id].v; }
+    else { scoreL = null; scoreV = null; }
+    renderScores();
+    document.getElementById('backdrop').classList.add('open');
+    document.getElementById('sheet').classList.add('open');
+  }
+
+  function closeSheet(){
+    document.getElementById('backdrop').classList.remove('open');
+    document.getElementById('sheet').classList.remove('open');
+    currentCard = null;
+  }
+
+  function step(side, delta){
+    if(side === 'l'){
+      scoreL = (scoreL === null ? 0 : scoreL) + delta;
+      if(scoreL < 0) scoreL = 0;
+      if(scoreL > 20) scoreL = 20;
+    } else {
+      scoreV = (scoreV === null ? 0 : scoreV) + delta;
+      if(scoreV < 0) scoreV = 0;
+      if(scoreV > 20) scoreV = 20;
+    }
+    renderScores();
+  }
+
+  function renderScores(){
+    const elL = document.getElementById('sheet-score-l');
+    const elV = document.getElementById('sheet-score-v');
+    elL.textContent = scoreL === null ? '—' : scoreL;
+    elV.textContent = scoreV === null ? '—' : scoreV;
+    elL.classList.toggle('has-value', scoreL !== null);
+    elV.classList.toggle('has-value', scoreV !== null);
+    document.getElementById('saveBtn').disabled = !(scoreL !== null && scoreV !== null);
+  }
+
+  function saveCurrent(){
+    if(scoreL === null || scoreV === null || !currentCard) return;
+    const id = currentCard.dataset.id;
+    savedScores[id] = {l: scoreL, v: scoreV};
+    const cells = currentCard.querySelectorAll('.score-cell');
+    cells[0].textContent = scoreL;
+    cells[1].textContent = scoreV;
+    cells.forEach(c=>{ c.classList.remove('empty'); c.classList.add('filled'); });
+    const status = currentCard.querySelector('.match-status');
+    status.classList.add('done');
+    status.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+    currentCard.classList.add('saved','pulse-save');
+    setTimeout(()=> currentCard.classList.remove('pulse-save'), 700);
+    closeSheet();
+    updateProgress();
+    showToastMsg('Pronóstico guardado');
+  }
+
+  function updateProgress(){
+    const total = document.querySelectorAll('.match-card').length;
+    const done = Object.keys(savedScores).length;
+    document.getElementById('counter').textContent = done+'/'+total;
+    document.getElementById('bar').style.width = (done/total*100)+'%';
+  }
+
+  function showToastMsg(msg){
+    const t = document.getElementById('toast');
+    document.getElementById('toastText').textContent = msg;
+    t.classList.add('show');
+    clearTimeout(window._tt);
+    window._tt = setTimeout(()=> t.classList.remove('show'), 2200);
+  }
+</script>
+</body>
+</html>
