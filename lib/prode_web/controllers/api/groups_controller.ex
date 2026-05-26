@@ -35,7 +35,7 @@ defmodule ProdeWeb.Api.GroupsController do
     Ecto.NoResultsError -> send_resp(conn, 404, ~s({"error":"not found"}))
   end
 
-  def join(conn, %{"id" => _id, "invite_code" => code}) do
+  def join(conn, %{"invite_code" => code}) do
     user = conn.assigns.current_user
 
     case Groups.join_by_invite_code(user, code) do
@@ -61,7 +61,11 @@ defmodule ProdeWeb.Api.GroupsController do
     limit = String.to_integer(params["limit"] || "50")
     offset = String.to_integer(params["offset"] || "0")
 
-    rows = Groups.leaderboard_for_group(group_id, limit: limit, offset: offset)
+    rows =
+      group_id
+      |> Groups.leaderboard_for_group(limit: limit, offset: offset)
+      |> Enum.map(&normalize_leaderboard_row/1)
+
     json(conn, %{data: rows})
   rescue
     Ecto.NoResultsError -> send_resp(conn, 404, ~s({"error":"not found"}))
@@ -78,6 +82,19 @@ defmodule ProdeWeb.Api.GroupsController do
       tournament_id: g.tournament_id
     }
   end
+
+  defp normalize_leaderboard_row(row) do
+    Map.update(row, :id, nil, &normalize_uuid/1)
+  end
+
+  defp normalize_uuid(<<_::128>> = bin) do
+    case Ecto.UUID.load(bin) do
+      {:ok, str} -> str
+      _ -> Base.encode16(bin, case: :lower)
+    end
+  end
+
+  defp normalize_uuid(other), do: other
 
   defp format_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->

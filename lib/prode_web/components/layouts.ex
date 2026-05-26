@@ -5,11 +5,87 @@ defmodule ProdeWeb.Layouts do
   """
   use ProdeWeb, :html
 
-  # Embed all files in layouts/* within this module.
-  # The default root.html.heex file contains the HTML
-  # skeleton of your application, namely HTML headers
-  # and other static content.
   embed_templates "layouts/*"
+
+  # ── Mobile app shell ────────────────────────────────────────────────
+
+  def mobile(assigns) do
+    ~H"""
+    <div class="flex flex-col h-dvh max-w-md mx-auto bg-app-bg relative">
+      <%!-- Red header --%>
+      <header class="bg-brand text-white flex items-center justify-between px-4 py-3 flex-shrink-0 z-10"
+              style="box-shadow: 0 2px 12px rgb(232 32 42 / 0.25)">
+        <div class="flex items-center gap-2.5">
+          <.icon name="hero-trophy" class="size-6 text-white" />
+          <div>
+            <div class="font-heading text-xl leading-none tracking-widest">PRODE</div>
+            <div class="text-[11px] opacity-75 leading-none mt-0.5 font-body">
+              {if assigns[:active_tournament], do: assigns.active_tournament.name, else: "Mundial 2026"}
+            </div>
+          </div>
+        </div>
+        <div class="size-8 rounded-full bg-white/20 flex items-center justify-center">
+          <span class="font-heading text-sm font-bold">
+            {user_initial(assigns[:current_scope])}
+          </span>
+        </div>
+      </header>
+
+      <%!-- Flash messages --%>
+      <.flash_group flash={@flash} />
+
+      <%!-- Scrollable page content --%>
+      <main class="flex-1 min-h-0 overflow-y-auto">
+        {@inner_content}
+      </main>
+
+      <%!-- Bottom tab bar --%>
+      <nav class="flex-shrink-0 bg-white border-t border-divider flex items-center pb-safe z-10">
+        <.tab_item path={~p"/"} tab={:pronosticos} current_tab={assigns[:tab]}
+                   icon="hero-pencil-square" label="Pronósticos" />
+        <.tab_item path={~p"/posiciones"} tab={:posiciones} current_tab={assigns[:tab]}
+                   icon="hero-trophy" label="Posiciones" />
+        <.tab_item path={~p"/torneos"} tab={:torneos} current_tab={assigns[:tab]}
+                   icon="hero-globe-alt" label="Torneos" />
+        <.tab_item path={~p"/fixture"} tab={:fixture} current_tab={assigns[:tab]}
+                   icon="hero-calendar" label="Fixture" />
+        <.tab_item path={~p"/mas"} tab={:mas} current_tab={assigns[:tab]}
+                   icon="hero-user-circle" label="Más" />
+      </nav>
+    </div>
+    """
+  end
+
+  defp tab_item(assigns) do
+    assigns = assign(assigns, :active, assigns.tab == assigns.current_tab)
+
+    ~H"""
+    <.link
+      navigate={@path}
+      class={[
+        "flex-1 flex flex-col items-center gap-0.5 py-2 transition-colors",
+        if(@active, do: "text-brand", else: "text-muted")
+      ]}
+    >
+      <.icon name={@icon} class="size-5" />
+      <span class={[
+        "text-[10px] leading-none",
+        if(@active, do: "font-semibold", else: "font-medium")
+      ]}>
+        {@label}
+      </span>
+    </.link>
+    """
+  end
+
+  defp user_initial(nil), do: "?"
+  defp user_initial(%{user: nil}), do: "?"
+
+  defp user_initial(%{user: user}) do
+    (user.display_name || user.email || "?")
+    |> String.first()
+    |> String.upcase()
+  end
 
   @doc """
   Renders your app layout.

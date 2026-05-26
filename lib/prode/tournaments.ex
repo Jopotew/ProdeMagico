@@ -38,6 +38,26 @@ defmodule Prode.Tournaments do
     )
   end
 
+  @doc "Returns the current tournament (active or upcoming). Raises if none found."
+  def get_active_tournament! do
+    Repo.one!(
+      from t in Tournament,
+        where: t.status in [:active, :upcoming],
+        order_by: t.starts_on,
+        limit: 1
+    )
+  end
+
+  @doc "Returns the current or next upcoming tournament (lowest start date among upcoming/active)."
+  def get_current_tournament do
+    from(t in Tournament,
+      where: t.status in [:upcoming, :active],
+      order_by: t.starts_on,
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
   @doc "Sets bonus_predictions_lock_at to now (call when tournament has started and lock should apply)."
   def set_bonus_predictions_lock!(%Tournament{} = tournament) do
     tournament

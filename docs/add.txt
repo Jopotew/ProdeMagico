@@ -1,0 +1,5 @@
+What's missing:
+Add to db a fixture of 5 matches. 
+Add the ability to create groups and invite people by sending a custom link
+Add positions based on results of those groups
+Add the ability to make predictions on the matches.

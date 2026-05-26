@@ -88,8 +88,10 @@ defmodule Prode.MixProject do
       # Notifications
       {:web_push_elixir, "~> 0.3"},
 
+      # Excel parsing
+      {:xlsx_reader, "~> 0.8"},
+
       # Test only
-      {:bypass, "~> 2.1", only: :test},
       {:mox, "~> 1.1", only: :test},
       {:ex_machina, "~> 2.7", only: :test},
       {:excoveralls, "~> 0.18", only: :test},

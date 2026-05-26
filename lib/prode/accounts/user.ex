@@ -17,6 +17,7 @@ defmodule Prode.Accounts.User do
     field :whatsapp_opted_in, :boolean, default: false
     field :whatsapp_verification_code, :string
     field :whatsapp_verification_sent_at, :utc_datetime
+    field :is_admin, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end

@@ -27,6 +27,12 @@
 14. [Day-by-Day Breakdown](#14-day-by-day-breakdown)
 15. [Risk Register](#15-risk-register)
 16. [Post-v1 Roadmap](#16-post-v1-roadmap)
+17. [Frontend Plan — Overview](#17-frontend-plan--overview)
+18. [Frontend Design System](#18-frontend-design-system)
+19. [LiveView Architecture](#19-liveview-architecture)
+20. [The Five Pages — Detailed Specs](#20-the-five-pages--detailed-specs)
+21. [Frontend Day-by-Day Breakdown](#21-frontend-day-by-day-breakdown)
+22. [Frontend Risk Register](#22-frontend-risk-register)
 
 ---
 
@@ -1254,6 +1260,637 @@ If you sit down right now, in this order:
 5. Run `mix phx.new prode --live --binary-id` and commit the initial scaffold. From there, follow Day 1 of the breakdown above.
 
 The first commit should land within an hour of starting. The first deployed "Hello, Prode" should land within four hours. If either of those slips significantly, the 2-week timeline is already at risk and scope needs to be trimmed.
+
+---
+
+*End of backend document — frontend plan continues below.*
+
+---
+
+## 17. Frontend Plan — Overview
+
+**Status:** Backend complete (Days 1-14). Frontend begins Day 15.
+
+**Design inspiration:** `docs/prode-master_mock.html` — a mobile-first football prediction app with 5-tab bottom nav, match cards, a bottom-sheet prediction entry UI, and a podium leaderboard. We build our own implementation inspired by this UX; we do not copy CSS or HTML verbatim. No ads. No premium/"PLUS" tier in v1.
+
+**End-of-frontend deliverable:** A user can sign in on a phone browser, submit predictions for all World Cup matches, watch live scores update in real time, and see their position in a group leaderboard — all through a polished Spanish-language mobile-first UI.
+
+### Technology decisions
+
+| Decision | Choice | Rationale |
+|---|---|---|
+| UI layer | Phoenix LiveView 1.1 | Already in stack; avoids a separate JS build step and SPA complexity |
+| Styling | Tailwind CSS v4 (bundled with Phoenix 1.8) | Utility-first, purges unused CSS, good mobile-first support |
+| Micro-interactions | Alpine.js (CDN, ~10 KB) | Bottom sheet open/close, accordion, tab transitions — too simple to warrant a full JS framework |
+| Icons | Heroicons (already in Phoenix) + custom SVG for flags/trophy | Minimal bundle addition |
+| Fonts | Google Fonts CDN — Barlow Condensed 600/700/800, Inter 400/500/600/700 | Match the mock's typographic hierarchy |
+| Real-time | Phoenix LiveView PubSub (already wired in backend) | No extra tooling; handles leaderboard and score updates |
+| Mobile viewport | `<meta name="viewport" content="width=device-width, initial-scale=1.0">` | Portrait-locked PWA feel |
+| No SPA | LiveView navigate/patch for tab switches | Standard LiveView navigation, no React Router |
+
+### What we skip from the mock
+
+- Ad banners (all banner slots removed)
+- "PLUS" premium card in Más tab
+- Pre-roll interstitial popup
+- Any payment or upgrade CTAs
+
+---
+
+## 18. Frontend Design System
+
+All values below go into `assets/css/app.css` as Tailwind CSS custom properties and utility classes.
+
+### Color palette
+
+```css
+:root {
+  --color-red:       #e8202a;   /* primary — CTAs, header, active tab */
+  --color-red-dark:  #c11820;   /* hover state */
+  --color-red-soft:  #fdecec;   /* background tint for prediction cells */
+  --color-red-tint:  #fff5f5;   /* hover bg on cards */
+
+  --color-bg:        #f5f6f8;   /* app background */
+  --color-card:      #ffffff;   /* card surfaces */
+
+  --color-ink:       #1a1a1a;   /* primary text */
+  --color-ink-2:     #2d2d2d;   /* secondary text */
+  --color-muted:     #8a8f98;   /* labels, timestamps */
+  --color-muted-2:   #b8bcc4;   /* placeholders, disabled */
+
+  --color-line:      #e6e8ec;   /* dividers, borders */
+  --color-line-soft: #eef0f3;   /* subtle separators */
+
+  --color-green:     #1fb866;   /* live indicator, saved badge */
+  --color-green-soft:#e6f7ee;   /* saved card glow */
+
+  --color-gold:      #e0a800;   /* leaderboard #1 podium */
+  --color-silver:    #9ba0ab;   /* leaderboard #2 podium */
+  --color-bronze:    #c46f35;   /* leaderboard #3 podium */
+
+  --color-gold-soft: #fff7d6;
+}
+```
+
+Tailwind config (`tailwind.config.js`) maps these as semantic aliases so we can write `bg-brand`, `text-brand`, `border-brand` etc.
+
+### Typography
+
+```
+Barlow Condensed — headings, scores, stage labels, team codes
+  700 → section titles ("FASE DE GRUPOS"), leaderboard ranks
+  800 → large score display in bottom sheet stepper
+
+Inter — body copy, labels, timestamps, button text
+  400 → descriptions, muted text
+  500 → body labels
+  600 → names, prediction counts
+  700 → totals, points
+```
+
+Utility classes to add:
+- `.font-heading` → `font-family: 'Barlow Condensed'; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;`
+- `.font-score` → `font-family: 'Barlow Condensed'; font-weight: 800; font-size: 2.25rem;`
+
+### Spacing and shape
+
+- Card border-radius: `14px` (`rounded-[14px]`)
+- Bottom sheet border-radius top corners: `24px`
+- Button border-radius: `12px`
+- Standard card padding: `16px 18px`
+- Standard page horizontal padding: `16px`
+
+### Shadows
+
+```css
+.shadow-card  { box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+.shadow-sheet { box-shadow: 0 -8px 40px rgba(0,0,0,.15); }
+.shadow-header{ box-shadow: 0 2px 12px rgba(232,32,42,.25); }
+```
+
+### Motion
+
+- Card tap feedback: `scale(0.99)` on `:active`, `transition: transform 200ms ease`
+- Bottom sheet entry: `translateY(100%)` → `translateY(0)`, `transition: transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1)` (spring)
+- Progress bar fill: `transition: width 500ms cubic-bezier(0.34, 1.56, 0.64, 1)`
+- Tab switch: fade via Alpine.js `x-transition`
+- Live dot pulse: `@keyframes pulse` CSS animation
+
+### Component library (Phoenix function components)
+
+Define in `lib/prode_web/components/ui_components.ex`:
+
+| Component | Description |
+|---|---|
+| `<.match_card>` | Match card with team flags, score cells, status badge |
+| `<.score_cell>` | Individual prediction score cell (dashed if empty, colored if filled, locked if past) |
+| `<.team_badge>` | Flag emoji + 3-letter code + full name |
+| `<.prediction_sheet>` | Bottom sheet wrapper with Alpine.js open/close |
+| `<.score_stepper>` | +/- stepper with large Barlow Condensed number display |
+| `<.leaderboard_row>` | Rank + avatar initial + name + points, with "YO" badge |
+| `<.podium>` | Gold/silver/bronze top-3 display |
+| `<.tournament_card>` | Gradient banner card with status badge and stats row |
+| `<.tab_bar>` | Fixed bottom nav with 5 tabs, active state |
+| `<.live_dot>` | Pulsing green indicator for live matches |
+| `<.section_heading>` | Barlow Condensed uppercase section title |
+| `<.avatar_initial>` | Colored circle with first letter of display_name |
+| `<.progress_bar>` | Animated prediction completion bar |
+| `<.round_selector>` | Date/round selector with prev/next arrows |
+| `<.flash_banner>` | Success/error flash messages |
+
+---
+
+## 19. LiveView Architecture
+
+### Router layout
+
+```elixir
+# lib/prode_web/router.ex (additions)
+
+live_session :app,
+  on_mount: [ProdeWeb.UserAuth, ProdeWeb.LiveHelpers],
+  layout: {ProdeWeb.Layouts, :app} do
+
+  live "/",               ProdeWeb.PronósticosLive,  :index
+  live "/posiciones",     ProdeWeb.PosicionesLive,    :index
+  live "/torneos",        ProdeWeb.TorneosLive,       :index
+  live "/fixture",        ProdeWeb.FixtureLive,       :index
+  live "/mas",            ProdeWeb.MasLive,           :index
+end
+```
+
+All five routes share one `live_session` so the socket is mounted once and the user stays authenticated across tab switches. Navigation between tabs uses `<.link navigate={~p"/posiciones"}>` — LiveView replaces the page content without a full reload.
+
+### App layout (`lib/prode_web/components/layouts/app.html.heex`)
+
+```
+┌─────────────────────────┐
+│  Status bar (red bg)    │  44px, fixed
+│  Header (red bg)        │  62px, fixed: brand logo + current tournament name
+├─────────────────────────┤
+│                         │
+│  Page content (flex:1)  │  scrollable inner area
+│  (rendered @inner_content│
+│   from the active LV)   │
+│                         │
+├─────────────────────────┤
+│  Bottom tab bar         │  64px, fixed
+│  [Pronósticos|Posiciones│
+│   |Torneos|Fixture|Más] │
+└─────────────────────────┘
+```
+
+The tab bar uses standard Phoenix `<.link navigate>` links, not JavaScript. The active tab is highlighted in red; inactive tabs are muted grey. Icons from Heroicons (mini variant).
+
+### `ProdeWeb.LiveHelpers` on_mount
+
+An `on_mount` hook that assigns shared socket data all LiveViews need:
+- `current_user` (already provided by UserAuth)
+- `active_tournament` — the current/upcoming World Cup tournament
+- `user_groups` — groups the user belongs to (for the Posiciones tab toggle)
+- `current_path` — for active tab detection in the tab bar
+
+### PubSub subscriptions by LiveView
+
+| LiveView | Subscribes to | Handles |
+|---|---|---|
+| `PronósticosLive` | `"match:#{id}"` for visible matches | Score updates, lock state |
+| `PosicionesLive` | `"group:#{group.id}"` | Leaderboard refresh on `{:leaderboard_updated, _}` |
+| `FixtureLive` | `"match:#{id}"` for all today/tomorrow matches | Live status, score, elapsed time |
+| `TorneosLive` | `"tournament:#{id}"` | Status transitions |
+| `MasLive` | `"user:#{user.id}"` | Profile updates (WhatsApp verification) |
+
+### State management pattern
+
+Each LiveView holds its domain state in socket assigns. No global shared state. When a PubSub message arrives, the LiveView re-fetches only the affected record and updates the assign — it does not re-fetch the whole page.
+
+Example for `FixtureLive`:
+
+```elixir
+def handle_info({:match_updated, match}, socket) do
+  matches = Enum.map(socket.assigns.matches, fn m ->
+    if m.id == match.id, do: match, else: m
+  end)
+  {:noreply, assign(socket, matches: matches)}
+end
+```
+
+### Bottom sheet pattern
+
+The prediction entry bottom sheet is an Alpine.js component. LiveView handles the data; Alpine handles the animation.
+
+```html
+<!-- prode_components.ex render -->
+<div x-data="{ open: false }" x-on:open-sheet.window="open = true">
+  <!-- Match card trigger -->
+  <div phx-click={JS.dispatch("open-sheet")} ...>
+    <.match_card />
+  </div>
+
+  <!-- Sheet backdrop -->
+  <div x-show="open" x-transition:enter="ease-out duration-200"
+       x-on:click="open = false"
+       class="fixed inset-0 bg-black/40 z-40" />
+
+  <!-- Sheet itself -->
+  <div x-show="open"
+       x-transition:enter="transition ease-[cubic-bezier(0.34,1.56,0.64,1)] duration-350"
+       x-transition:enter-start="translate-y-full"
+       x-transition:enter-end="translate-y-0"
+       class="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 pb-safe">
+    <%= render_slot(@inner_block) %>
+  </div>
+</div>
+```
+
+The `phx-submit` on the score form inside the sheet calls `handle_event("submit_prediction", ...)` in the LiveView. On success, the LiveView sends a JS command to close the sheet and updates the match card's score cells in place.
+
+---
+
+## 20. The Five Pages — Detailed Specs
+
+### Page 1 — Pronósticos (default, route `/`)
+
+**Purpose:** Submit and review predictions for upcoming matches.
+
+**Socket assigns:**
+- `matches` — list of matches for the selected round/day, preloaded with home_team, away_team, stage
+- `predictions` — map of `match_id => prediction` for the current user (nil if no prediction yet)
+- `selected_round` — currently displayed round (e.g., "Grupo A", "Octavos")
+- `rounds` — list of all rounds with available matches
+- `sheet_match` — match currently open in the bottom sheet (nil when closed)
+- `sheet_home` / `sheet_away` — current stepper values (integers)
+
+**UI structure:**
+```
+┌──────────────────────────────────────┐
+│ Round selector  [←  Grupo A  →]      │  white card, 54px
+│ Progress bar  "3 de 8 predichos"     │  labels + red fill bar
+│                                      │
+│ FASE DE GRUPOS                       │  section heading
+│ ┌────────────────────────────────┐   │
+│ │ 🇦🇷 ARG   [2] — [1]   🇧🇷 BRA │   │  match card, saved border
+│ │ Hoy 20:00 · Estadio Lusail     │   │
+│ └────────────────────────────────┘   │
+│ ┌────────────────────────────────┐   │
+│ │ 🇩🇪 GER   [ ] — [ ]   🇫🇷 FRA │   │  match card, empty dashes
+│ │ Mañana 17:00 · MetLife          │   │
+│ └────────────────────────────────┘   │
+│ ...                                  │
+└──────────────────────────────────────┘
+```
+
+**Score cells:**
+- Empty (no prediction): dashed border, muted bg
+- Filled: white bg, ink number, green left border
+- Locked match (past lock time): shows actual score if available; grey bg; lock icon overlay
+- Live match: green pulsing border, actual score shown
+
+**Bottom sheet (prediction entry):**
+```
+┌────────────────────────────────────┐
+│  ─────  (drag handle)              │
+│  ARG vs BRA · Hoy 20:00            │  match info row
+│                                    │
+│  Predicciones populares            │  grey label
+│  [████░░░] 2-1 · 34%               │  most-predicted line
+│  [██░░░░░] 1-0 · 18%               │
+│                                    │
+│  Tu predicción                     │
+│  [−] [  2  ] — [  1  ] [+]         │  Barlow Condensed score stepper
+│       ARG           BRA            │
+│                                    │
+│  [   Guardar predicción   ]        │  red full-width button
+└────────────────────────────────────┘
+```
+
+The popular-predictions row shows the top 2 most submitted predictions for that match (query: `GROUP BY home_score, away_score ORDER BY count DESC LIMIT 2`). Only show if ≥5 total predictions exist (avoid influencing early predictions).
+
+**Events:**
+- `"open_sheet"` — sets `sheet_match`, initializes stepper from existing prediction or 0-0
+- `"inc_home"` / `"dec_home"` / `"inc_away"` / `"dec_away"` — update `sheet_home`/`sheet_away` (min 0, max 20)
+- `"submit_prediction"` — calls `Predictions.upsert_prediction/1`; on `:ok` updates match card in assigns and closes sheet; on `{:error, :match_locked}` shows flash
+- `"prev_round"` / `"next_round"` — changes `selected_round` and reloads `matches`
+
+---
+
+### Page 2 — Posiciones (route `/posiciones`)
+
+**Purpose:** Group leaderboard and global ranking.
+
+**Socket assigns:**
+- `active_group` — currently selected group (first of user's groups by default)
+- `user_groups` — list of user's groups for the toggle
+- `leaderboard` — list of `%{id, display_name, avatar_url, total}` rows (paginated, first 50)
+- `user_rank` — current user's rank in the active group
+- `total_members` — count of members in the active group
+
+**UI structure:**
+```
+┌────────────────────────────────────┐
+│  [Mis Grupos ▼]  [Global]          │  toggle + group picker
+│                                    │
+│  PODIO                             │
+│     [2] Silver    [1] Gold         │  podium — top 3 visually
+│                [3] Bronze          │
+│                                    │
+│  CLASIFICACIÓN COMPLETA            │
+│  1  [JM]  Juan M.       1,240 pts  │
+│  2  [AP]  Ana P.        1,115 pts  │
+│  3  [LC]  Luis C.       1,080 pts  │  ...
+│ 12  [YO]  Vos            840 pts   │  current user row, red bg
+└────────────────────────────────────┘
+```
+
+Avatar initials are colored using a hash of the user's id mapped to 8 pastel colors (same color is stable across page reloads).
+
+**PubSub:** subscribes to `"group:#{active_group.id}"` on mount. On `{:leaderboard_updated, group_id}` matching the active group, re-fetches leaderboard with a 500ms debounce (avoids hammering DB when many matches finish together).
+
+**Events:**
+- `"switch_group"` — changes `active_group`, re-subscribes to new group topic, reloads leaderboard
+- `"load_more"` — loads next 50 rows (infinite scroll via `phx-hook="InfiniteScroll"` + tiny JS hook)
+
+---
+
+### Page 3 — Torneos (route `/torneos`)
+
+**Purpose:** Browse tournaments, view stats, pick which tournament's predictions to enter.
+
+**Socket assigns:**
+- `tournaments` — list of active/upcoming tournaments (v1: only World Cup)
+- `user_stats` — map of `tournament_id => %{predictions_made, points_total, group_rank}`
+
+**UI structure:**
+```
+┌────────────────────────────────────┐
+│  TORNEOS ACTIVOS                   │
+│ ┌────────────────────────────────┐ │
+│ │ [gradient banner - blue]       │ │
+│ │  🏆  FIFA World Cup 2026        │ │
+│ │  EN CURSO                      │ │  badge
+│ │ ─────────────────────────────  │ │
+│ │  42 predichos  · 1,240 pts     │ │  user stats row
+│ │  Tu grupo: Los Pibes — 3° de 8 │ │
+│ └────────────────────────────────┘ │
+│                                    │
+│  PRÓXIMOS TORNEOS                  │
+│  (empty if none)                   │
+└────────────────────────────────────┘
+```
+
+Each tournament card links to `/torneos/:id` (a detail LiveView showing stages with their group tables — v2 feature). In v1, the card is informational only; tapping it navigates to the Pronósticos tab filtered to that tournament.
+
+Tournament card gradient colors (Tailwind `from-*` / `to-*`):
+- World Cup → `from-blue-700 to-indigo-900`
+- Copa América (future) → `from-green-700 to-teal-900`
+- Liga (future) → `from-violet-700 to-purple-900`
+
+Status badges:
+- `:in_progress` → green pill "EN CURSO"
+- `:upcoming` → yellow pill "PRÓXIMO · starts in N days"
+- `:finished` → grey pill "FINALIZADO"
+
+---
+
+### Page 4 — Fixture (route `/fixture`)
+
+**Purpose:** Browse all matches grouped by day — with live scores.
+
+**Socket assigns:**
+- `days` — list of `%{date: ~D[], matches: [...]}` structs, covering -3 days to +7 days from today
+- `scroll_to_today` — boolean, true on first mount (JS hook scrolls to today's section)
+
+**UI structure:**
+```
+┌────────────────────────────────────┐
+│  MARTES 10 JUN                     │  section heading, sticky
+│  ┌──────────────────────────────┐  │
+│  │ 🟢 VIVO 67'  ARG 2-1 BRA    │  │  live row, green dot
+│  └──────────────────────────────┘  │
+│  ┌──────────────────────────────┐  │
+│  │ 20:00  GER — FRA             │  │  upcoming row
+│  └──────────────────────────────┘  │
+│                                    │
+│  MIÉRCOLES 11 JUN                  │
+│  ┌──────────────────────────────┐  │
+│  │ 17:00  ESP — POR             │  │
+│  └──────────────────────────────┘  │
+└────────────────────────────────────┘
+```
+
+Each match row shows:
+- Time (or "FIN" if finished) — left column
+- Team flags + codes — center
+- Score (actual if finished/live, dash if upcoming) — right
+- If live: green pulsing dot + elapsed minutes
+
+**PubSub:** subscribes to `"match:#{m.id}"` for every match on mount. When a match update arrives, replaces the match in the `days` assigns by date group.
+
+**Performance:** subscribing to potentially 64 match topics is fine — PubSub subscriptions are cheap. We unsubscribe on `terminate/2`.
+
+---
+
+### Page 5 — Más (route `/mas`)
+
+**Purpose:** User profile, settings, sign out. No ads. No premium.
+
+**Socket assigns:**
+- `current_user` (from LiveHelpers)
+- `changeset` — for WhatsApp opt-in form
+- `whatsapp_state` — one of `:idle`, `:code_sent`, `:verified`
+
+**UI structure:**
+```
+┌────────────────────────────────────┐
+│  [Avatar]  Juan Pablo Maletti      │  profile card, red accent
+│            juanpi@gmail.com        │
+│            Google Sign-In badge    │
+│                                    │
+│  NOTIFICACIONES                    │  section
+│  Push notifications   [toggle]     │
+│  WhatsApp             [toggle]     │
+│  └─ phone: +54 9 ...  [change]     │  conditional, if opted in
+│                                    │
+│  PREFERENCIAS                      │
+│  Zona horaria  América/Bs.As.  [>] │
+│  Idioma        Español         [>] │  (v1: read-only)
+│                                    │
+│  [  Cerrar sesión  ]               │  red outlined button
+└────────────────────────────────────┘
+```
+
+WhatsApp opt-in flow (inline in this page):
+1. Toggle → phone number input appears
+2. User enters number → tap "Enviar código"
+3. LiveView calls `Accounts.send_whatsapp_verification/1` → shows 6-digit input
+4. User enters code → LiveView calls `Accounts.verify_whatsapp_code/2`
+5. On success: toggle shows "verified", phone shown with checkmark
+
+Push notifications toggle calls a JS hook (`PushSubscriptionHook`) that calls `navigator.serviceWorker.register`, then requests permission, then does a `pushManager.subscribe`, then `phx.push("register_push_subscription", {subscription: ...})` to the LiveView.
+
+**Events:**
+- `"toggle_push"` — calls `Notifications.upsert_push_subscription/2` or `delete_push_subscription/1`
+- `"send_whatsapp_code"` — triggers `Accounts.send_whatsapp_verification/1`
+- `"verify_code"` — triggers `Accounts.verify_whatsapp_code/2`
+- `"sign_out"` — redirect to `~p"/users/log_out"` (GET, existing gen.auth route)
+
+---
+
+## 21. Frontend Day-by-Day Breakdown
+
+### Day 15 — Design system + layout shell
+
+- Add Google Fonts import to `assets/css/app.css`
+- Configure Tailwind with custom color palette, font families, border-radius utilities
+- Add `shadow-card`, `shadow-sheet`, `font-heading`, `font-score` custom utilities
+- Build the app layout: red header + fixed bottom tab bar (5 tabs)
+- Tab bar active state: red icon + label; inactive: muted grey
+- Create `lib/prode_web/components/ui_components.ex` with placeholder slot-based components
+- Implement `ProdeWeb.LiveHelpers` on_mount
+- Wire up all 5 routes and create skeleton LiveView files (mount returns bare assigns, render returns "coming soon" text)
+- Verify tab switching works in browser (no full page reload)
+
+**End-of-day deliverable:** Chrome dev tools mobile viewport shows the app shell with working tab navigation.
+
+---
+
+### Day 16 — Match card + round selector
+
+- Implement `<.match_card>` component
+  - Team flags (use regional indicator Unicode emoji — e.g., 🇦🇷 from team record `flag_emoji` field if we add it, or CSS flags sprite)
+  - Score cells: empty dashes vs filled numbers vs locked actual score
+  - Status badges: VIVO, FIN, lock icon
+- Implement `<.round_selector>` component (prev/next arrows + round label)
+- Implement `<.progress_bar>` component
+- Implement `<.section_heading>` component
+- Build `PronósticosLive` mount/render: loads matches for first available round, loads user's predictions
+- Real data visible in the browser: actual World Cup matches with correct team names
+
+**End-of-day deliverable:** The Pronósticos page shows real match cards with correct data. No prediction submission yet.
+
+---
+
+### Day 17 — Bottom sheet + prediction submission
+
+- Add Alpine.js to `assets/vendor/` (download, add to `app.js` import)
+- Implement `<.prediction_sheet>` with Alpine-driven open/close animation
+- Implement `<.score_stepper>` — +/- buttons with Barlow Condensed number display
+- Wire `phx-click` on match cards to open sheet via `phx-value-match-id`
+- Implement `PronósticosLive.handle_event("open_sheet", ...)` — sets `sheet_match` assign
+- Implement stepper events: `inc_home`, `dec_home`, `inc_away`, `dec_away`
+- Implement `submit_prediction` event — calls `Predictions.upsert_prediction/1`
+  - On success: update `predictions` assign, update match card to show saved cells, close sheet via JS push
+  - On `{:error, :match_locked}`: flash "El partido ya no acepta pronósticos"
+  - On `{:error, :too_late}`: flash "Tiempo de cierre superado"
+- Show popular predictions bar inside sheet (top 2 scored predictions for match)
+
+**End-of-day deliverable:** Full prediction submission flow works end to end on mobile browser.
+
+---
+
+### Day 18 — Leaderboard (Posiciones)
+
+- Implement `<.avatar_initial>` component with stable color hash
+- Implement `<.podium>` component (gold/silver/bronze top 3 with size difference)
+- Implement `<.leaderboard_row>` component with "YO" badge for current user
+- Build `PosicionesLive` — mounts with first group's leaderboard, subscribes to PubSub
+- Group switcher dropdown (if user has multiple groups)
+- PubSub handler: on `{:leaderboard_updated, id}` reload leaderboard data
+- "YO" row: if current user is outside top 10, pin their row at bottom of list as sticky
+- Load more rows (infinite scroll via `phx-hook` JS hook that watches scroll position)
+
+**End-of-day deliverable:** Leaderboard shows real data, updates within 2 seconds of a simulated match finish.
+
+---
+
+### Day 19 — Fixture + live indicators
+
+- Implement `<.live_dot>` component (CSS keyframe pulse animation)
+- Build `FixtureLive` — groups matches by calendar date, subscribes to all match PubSub topics
+- Day headings sticky within scroll area
+- Match rows: time | teams | score | live indicator
+- Handle `{:match_updated, match}` — update the specific match in assigns without full reload
+- Scroll-to-today on first mount (JS hook: `document.getElementById("today").scrollIntoView()`)
+- Elapsed minutes update for live matches
+
+**End-of-day deliverable:** Fixture page shows all World Cup matches; simulated live match shows pulsing indicator and updates score in real time.
+
+---
+
+### Day 20 — Torneos + Más
+
+**Torneos:**
+- Build `TorneosLive` — loads tournaments with user stats
+- Implement `<.tournament_card>` with gradient banner, status badge, stats row
+- Tap on card navigates to Pronósticos filtered to that tournament (v1: single World Cup, so this is mostly UI polish)
+
+**Más / Profile:**
+- Build `MasLive` with profile card, notification settings, sign-out
+- Push notification toggle: JS hook (`PushSubscriptionHook`) wires up `navigator.serviceWorker` + `pushManager.subscribe`, calls LiveView on success
+- WhatsApp opt-in form (phone input → send code → verify) using existing backend
+
+**End-of-day deliverable:** All 5 tabs have real content. User can sign out.
+
+---
+
+### Day 21 — Polish + mobile testing
+
+- Fix layout issues on iPhone SE (375px) and Pixel 5 (393px) — the two test targets
+- Keyboard avoidance: when bottom sheet opens and user taps stepper, ensure keyboard (if any) doesn't cover the sheet — test on iOS Safari
+- Add `pb-safe` padding (env(safe-area-inset-bottom)) to tab bar and sheet for notch devices
+- PWA manifest: `manifest.json` with theme color `#e8202a`, icons, `display: standalone`, `orientation: portrait`
+- Service worker: basic offline cache for app shell (not match data — that's always live)
+- Add `<meta name="theme-color" content="#e8202a">` to HTML head
+- Test dark mode: use `prefers-color-scheme: dark` media query for card surfaces (optional but nice)
+- Run `mix credo --strict` and fix any warnings
+
+**End-of-day deliverable:** App feels like a native app when added to home screen. No layout regressions on both test viewports.
+
+---
+
+### Day 22 — LiveView tests + accessibility
+
+- Write LiveView tests using `Phoenix.LiveViewTest` for critical paths:
+  - Prediction submission flow (open sheet → adjust scores → submit → card updates)
+  - Leaderboard receives PubSub broadcast and updates
+  - Locked match shows lock overlay and rejects late prediction
+  - Sign-out redirects to login
+- Accessibility pass:
+  - All interactive elements have `aria-label` or visible text
+  - Color contrast: ink on card bg passes WCAG AA (checked: `#1a1a1a` on `#ffffff` = 18.1:1 ✓)
+  - Score cells have `role="group"` and `aria-label="Pronóstico: 2-1"`
+  - Bottom sheet has `role="dialog"`, `aria-modal="true"`, focus trap
+- Run full test suite: `mix test`
+
+**End-of-day deliverable:** `mix test` passes with LiveView integration tests. No accessibility blockers on axe-core audit.
+
+---
+
+### Day 23 (Buffer / Stretch) — Bonus predictions UI
+
+If Days 15-22 finish on schedule, build the bonus predictions UI:
+
+- New tab or modal accessible from Torneos page: "Bonus Predictions"
+- Top scorer picker: searchable player list from `TopScorerSyncWorker` cache
+- Group winner picker: 8 dropdowns (one per group A-H) with team options
+- Lock countdown: shows time remaining until `tournament.bonus_predictions_lock_at`
+- After lock: shows submitted picks read-only with points awarded (if tournament ended)
+
+---
+
+## 22. Frontend Risk Register
+
+| Risk | Likelihood | Impact | Mitigation |
+|---|---|---|---|
+| Alpine.js sheet animation jank on low-end Android | Medium | Low | Test on Moto G4-class device; fallback to instant show/hide if animation stutters |
+| iOS Safari safe-area insets missing | Medium | Medium | Use `env(safe-area-inset-bottom)` in CSS; test on physical iPhone or BrowserStack |
+| Push notification permission UX — users deny | High | Medium | Explain value before requesting; notification is opt-in; app works fine without it |
+| Service worker caching stale LiveView HTML | Low | High | Cache only static assets, not `/_live/` paths; version the cache key |
+| 64 PubSub subscriptions on FixtureLive | Low | Low | PubSub subscriptions are in-process ETS lookups; tested at 10k topics, it's fine |
+| Flag emoji rendering on Windows | Medium | Low | Most modern browsers render Unicode regional indicators; fallback to team short code text |
+| Leaderboard flash on PubSub update (whole list re-renders) | Medium | Low | Use `phx-update="stream"` for list items so LiveView sends minimal patches |
+| WhatsApp template approval delay blocking push opt-in | High | Low | Push notification works without WhatsApp; WhatsApp opt-in is opt-in; not a blocker |
+| Keyboard + bottom sheet overlap on iOS | Medium | Medium | Use `visualViewport` API hook to shift sheet up when keyboard appears |
 
 ---
 

@@ -1,0 +1,16 @@
+{
+  "name": "Prode — Mundial 2026",
+  "short_name": "Prode",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f6f8",
+  "theme_color": "#e8202a",
+  "icons": [
+    {
+      "src": "/images/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ]
+}

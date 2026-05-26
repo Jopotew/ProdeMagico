@@ -7,7 +7,6 @@ defmodule Prode.Groups do
 
   alias Prode.Accounts.User
   alias Prode.Groups.{Group, Membership}
-  alias Prode.Predictions.BonusPrediction
   alias Prode.Repo
 
   @invite_code_chars ~w(A B C D E F G H J K L M N P Q R S T U V W X Y Z 2 3 4 5 6 7 8 9)

@@ -1,0 +1,11 @@
+.git
+.gitignore
+.env
+.elixir_ls
+_build
+deps
+*.md
+priv/plts
+priv/static/cache_manifest.json
+assets/node_modules
+test

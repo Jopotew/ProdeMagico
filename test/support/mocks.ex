@@ -1,1 +1,1 @@
-Mox.defmock(Prode.External.MockSportsDataClient, for: Prode.External.SportsDataClient)
+Mox.defmock(Prode.External.MockWhatsAppClient, for: Prode.External.WhatsAppClient)

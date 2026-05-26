@@ -61,6 +61,37 @@ defmodule Prode.Matches do
     end
   end
 
+  @doc "Returns distinct round names for a tournament ordered by first kickoff in that round."
+  def list_rounds_for_tournament(tournament_id) do
+    from(m in Match,
+      where: m.tournament_id == ^tournament_id and not is_nil(m.round),
+      group_by: m.round,
+      order_by: min(m.kickoff_at),
+      select: m.round
+    )
+    |> Repo.all()
+  end
+
+  @doc "Returns matches for a specific round with teams and stage preloaded."
+  def list_matches_by_round(tournament_id, round) do
+    from(m in Match,
+      where: m.tournament_id == ^tournament_id and m.round == ^round,
+      order_by: m.kickoff_at,
+      preload: [:home_team, :away_team, :stage]
+    )
+    |> Repo.all()
+  end
+
+  @doc "Returns all matches for a tournament with teams preloaded, ordered by kickoff."
+  def list_all_matches_with_teams(tournament_id) do
+    from(m in Match,
+      where: m.tournament_id == ^tournament_id,
+      order_by: m.kickoff_at,
+      preload: [:home_team, :away_team]
+    )
+    |> Repo.all()
+  end
+
   @doc "Marks a match as locked and broadcasts the update."
   def lock_match!(%Match{} = match) do
     match

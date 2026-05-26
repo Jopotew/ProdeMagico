@@ -22,10 +22,24 @@ defmodule ProdeWeb.Router do
     plug ProdeWeb.Plugs.ApiAuth
   end
 
+  # ── Main app (5-tab mobile interface) ────────────────────────────────
   scope "/", ProdeWeb do
-    pipe_through :browser
+    pipe_through [:browser, :require_authenticated_user]
 
-    get "/", PageController, :home
+    live_session :app,
+      on_mount: [
+        {ProdeWeb.UserAuth, :require_authenticated},
+        {ProdeWeb.LiveHelpers, :default}
+      ],
+      layout: {ProdeWeb.Layouts, :mobile} do
+      live "/", PronosticosLive, :index
+      live "/posiciones", PosicionesLive, :index
+      live "/torneos", TorneosLive, :index
+      live "/torneos/:tournament_id/bonus", BonusLive, :index
+      live "/join/:code", JoinLive, :index
+      live "/fixture", FixtureLive, :index
+      live "/mas", MasLive, :index
+    end
   end
 
   # Public API endpoints
@@ -50,6 +64,19 @@ defmodule ProdeWeb.Router do
     get "/users/me", UsersController, :me
     get "/users/me/predictions", UsersController, :predictions
     post "/users/me/push-subscription", UsersController, :push_subscription
+  end
+
+  # ── Admin routes ─────────────────────────────────────────────────────────
+  scope "/admin", ProdeWeb.Admin do
+    pipe_through [:browser, :require_authenticated_user, :require_admin]
+
+    live_session :admin,
+      on_mount: [
+        {ProdeWeb.UserAuth, :require_authenticated},
+        {ProdeWeb.UserAuth, :require_admin}
+      ] do
+      live "/import", MatchImportLive, :index
+    end
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

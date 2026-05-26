@@ -31,7 +31,23 @@
       "PowerShell($env:PATH = \"C:\\\\Users\\\\juanp\\\\scoop\\\\apps\\\\elixir\\\\current\\\\bin;C:\\\\Users\\\\juanp\\\\scoop\\\\apps\\\\erlang\\\\current\\\\bin;\" + $env:PATH; cd \"m:\\\\Archivos de programa\\\\Proyectos\\\\Github\\\\ProdeMagico\"; mix compile 2>&1 | Where-Object { $_ -match \"never match|└─\" } | Select-Object -First 20)",
       "PowerShell($env:PATH = \"C:\\\\Users\\\\juanp\\\\scoop\\\\apps\\\\elixir\\\\current\\\\bin;C:\\\\Users\\\\juanp\\\\scoop\\\\apps\\\\erlang\\\\current\\\\bin;\" + $env:PATH; cd \"m:\\\\Archivos de programa\\\\Proyectos\\\\Github\\\\ProdeMagico\"; mix test test/prode/integration/ 2>&1 | Select-Object -Last 25)",
       "PowerShell($env:PATH = \"C:\\\\Users\\\\juanp\\\\scoop\\\\apps\\\\elixir\\\\current\\\\bin;C:\\\\Users\\\\juanp\\\\scoop\\\\apps\\\\erlang\\\\current\\\\bin;\" + $env:PATH; cd \"m:\\\\Archivos de programa\\\\Proyectos\\\\Github\\\\ProdeMagico\"; mix test test/prode/integration/ 2>&1 | Select-Object -Last 15)",
-      "PowerShell($env:PATH = \"C:\\\\Users\\\\juanp\\\\scoop\\\\apps\\\\elixir\\\\current\\\\bin;C:\\\\Users\\\\juanp\\\\scoop\\\\apps\\\\erlang\\\\current\\\\bin;\" + $env:PATH; cd \"m:\\\\Archivos de programa\\\\Proyectos\\\\Github\\\\ProdeMagico\"; mix test test/prode/integration/ 2>&1 | Select-String \"encode_params|DBConnection|Postgrex.Error|encode\" | Select-Object -First 5)"
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\juanp\\\\scoop\\\\apps\\\\elixir\\\\current\\\\bin;C:\\\\Users\\\\juanp\\\\scoop\\\\apps\\\\erlang\\\\current\\\\bin;\" + $env:PATH; cd \"m:\\\\Archivos de programa\\\\Proyectos\\\\Github\\\\ProdeMagico\"; mix test test/prode/integration/ 2>&1 | Select-String \"encode_params|DBConnection|Postgrex.Error|encode\" | Select-Object -First 5)",
+      "Bash(mix compile *)",
+      "Bash(mix credo *)",
+      "Bash(mix test *)",
+      "Bash(mix ecto.create)",
+      "Bash(mix run *)",
+      "Bash(mix ecto.gen.migration add_top_scorer_unique_index_to_bonus_predictions)",
+      "Bash(mix ecto.migrate)",
+      "PowerShell(Set-Location \"m:\\\\Archivos de programa\\\\Proyectos\\\\Github\\\\ProdeMagico\"; Get-Content '.env' | Where-Object { $_ -notmatch 'SECRET|PASSWORD|TOKEN|KEY|CLIENT' } ; Write-Output \"---\"; Get-Content '.env' | Where-Object { $_ -match 'API_FOOTBALL' })",
+      "PowerShell(Set-Location \"m:\\\\Archivos de programa\\\\Proyectos\\\\Github\\\\ProdeMagico\"; Get-Content '.env' | ForEach-Object { \\($_ -split '='\\)[0] })",
+      "Bash(psql -U postgres -d prode_dev -c \"SELECT id, name, season, status FROM tournaments;\")",
+      "Bash(mix prode.import_matches)",
+      "Bash(psql -U postgres -d prode_dev -t -c \"SELECT count\\(*\\) FROM matches; SELECT count\\(*\\) FROM teams; SELECT home_team_id, away_team_id, kickoff_at FROM matches ORDER BY kickoff_at LIMIT 1;\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 4000 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Get-Process -Id $_ -ErrorAction SilentlyContinue })",
+      "PowerShell(Stop-Process -Id 27640 -Force)",
+      "Bash(psql -U postgres -d prode_dev -c \"SELECT t1.name AS home, m.home_score, m.away_score, t2.name AS away FROM matches m JOIN teams t1 ON t1.id = m.home_team_id JOIN teams t2 ON t2.id = m.away_team_id WHERE m.status = 'finished' ORDER BY m.kickoff_at;\")",
+      "Bash(psql -U postgres -d prode_dev -t -A -c \"SELECT state, count\\(*\\) FROM oban_jobs GROUP BY state;\")"
     ]
   }
 }

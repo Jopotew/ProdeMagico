@@ -246,6 +246,21 @@ defmodule ProdeWeb.UserAuth do
     end
   end
 
+  def on_mount(:require_admin, _params, _session, socket) do
+    user = socket.assigns[:current_scope] && socket.assigns.current_scope.user
+
+    if user && user.is_admin do
+      {:cont, socket}
+    else
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(:error, "No autorizado.")
+        |> Phoenix.LiveView.redirect(to: ~p"/")
+
+      {:halt, socket}
+    end
+  end
+
   defp mount_current_scope(socket, session) do
     Phoenix.Component.assign_new(socket, :current_scope, fn ->
       {user, _} =
@@ -279,6 +294,21 @@ defmodule ProdeWeb.UserAuth do
       |> halt()
     end
   end
+
+  @doc "Plug for routes that require is_admin = true."
+  def require_admin(conn, _opts) do
+    user = conn.assigns[:current_scope] && conn.assigns.current_scope.user
+
+    if user && user.is_admin do
+      conn
+    else
+      conn
+      |> put_flash(:error, "No autorizado.")
+      |> redirect(to: ~p"/")
+      |> halt()
+    end
+  end
+
 
   defp maybe_store_return_to(%{method: "GET"} = conn) do
     put_session(conn, :user_return_to, current_path(conn))

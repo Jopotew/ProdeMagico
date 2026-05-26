@@ -4,6 +4,8 @@ defmodule Prode.External.WhatsApp do
   Sends pre-approved template messages only.
   """
 
+  @behaviour Prode.External.WhatsAppClient
+
   require Logger
 
   @api_version "v19.0"

@@ -25,11 +25,84 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/prode"
 import topbar from "../vendor/topbar"
 
+// Hook: subscribes the browser to web push and reports back to LiveView
+const PushSubscription = {
+  mounted() {
+    this.el.addEventListener("click", () => this.subscribe())
+  },
+  subscribe() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      this.pushEvent("push_not_supported", {})
+      return
+    }
+    const vapidKey = document
+      .querySelector("meta[name='vapid-public-key']")
+      ?.getAttribute("content")
+    if (!vapidKey) {
+      this.pushEvent("push_not_supported", {})
+      return
+    }
+    Notification.requestPermission().then(permission => {
+      if (permission !== "granted") {
+        this.pushEvent("push_denied", {})
+        return
+      }
+      navigator.serviceWorker.ready.then(reg => {
+        reg.pushManager
+          .subscribe({userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(vapidKey)})
+          .then(sub => {
+            const json = sub.toJSON()
+            this.pushEvent("push_subscribed", {
+              endpoint: json.endpoint,
+              p256dh: json.keys?.p256dh,
+              auth: json.keys?.auth,
+            })
+          })
+          .catch(() => this.pushEvent("push_error", {}))
+      })
+    })
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/")
+  const rawData = atob(base64)
+  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)))
+}
+
+// Scroll the fixture day heading for today into view on mount
+const ScrollToToday = {
+  mounted() {
+    this.el.scrollIntoView({ behavior: "instant", block: "start" })
+  }
+}
+
+// Fires "load_more" when the sentinel element scrolls into view
+const InfiniteScroll = {
+  mounted() {
+    this.observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        this.pushEvent("load_more", {})
+      }
+    }, { rootMargin: "200px" })
+    this.observer.observe(this.el)
+  },
+  destroyed() {
+    this.observer?.disconnect()
+  }
+}
+
+// Copy text to clipboard via phx:copy_to_clipboard event
+window.addEventListener("phx:copy_to_clipboard", (e) => {
+  navigator.clipboard?.writeText(e.detail.text).then(() => {}).catch(() => {})
+})
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks},
+  hooks: {...colocatedHooks, PushSubscription, ScrollToToday, InfiniteScroll},
 })
 
 // Show progress bar on live navigation and form submits
@@ -39,6 +112,11 @@ window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()
+
+// Register service worker for PWA offline support
+if ("serviceWorker" in navigator && process.env.NODE_ENV !== "development") {
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
 
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()

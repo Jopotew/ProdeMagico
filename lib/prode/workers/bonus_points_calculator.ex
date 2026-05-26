@@ -55,6 +55,9 @@ defmodule Prode.Workers.BonusPointsCalculator do
     })
   end
 
+  # Name-based predictions (entered via text input) cannot be auto-scored against player IDs
+  defp score_bonus(:top_scorer, %{"player_name" => _name}, _job_payload), do: 0
+
   defp score_bonus(:group_winner, %{"team_id" => tid}, %{"actual_winner_id" => winner}) do
     Engine.calculate_bonus_points(:group_winner, %{
       predicted_team_id: tid,

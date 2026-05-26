@@ -1,6 +1,8 @@
 /* See the Tailwind configuration guide for advanced usage
    https://tailwindcss.com/docs/configuration */
 
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
 @import "tailwindcss" source(none);
 @source "../css";
 @source "../js";
@@ -102,4 +104,64 @@
 /* Make LiveView wrapper divs transparent for layout */
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
-/* This file is for your main application CSS */
+/* ── Prode brand design system ─────────────────────────────────────── */
+
+@theme {
+  /* Brand */
+  --color-brand:      #e8202a;
+  --color-brand-dark: #c11820;
+  --color-brand-soft: #fdecec;
+  /* App surfaces */
+  --color-app-bg:     #f5f6f8;
+  --color-card:       #ffffff;
+  /* Text */
+  --color-ink:        #1a1a1a;
+  --color-ink-2:      #2d2d2d;
+  --color-muted:      #8a8f98;
+  --color-muted-2:    #b8bcc4;
+  /* Dividers */
+  --color-divider:    #e6e8ec;
+  /* Status */
+  --color-live:       #1fb866;
+  --color-live-soft:  #e6f7ee;
+  /* Leaderboard */
+  --color-gold:       #e0a800;
+  --color-silver:     #9ba0ab;
+  --color-bronze:     #c46f35;
+  --color-gold-soft:  #fff7d6;
+  /* Typography */
+  --font-heading: 'Barlow Condensed', sans-serif;
+  --font-body:    'Inter', sans-serif;
+}
+
+/* Custom utility classes */
+.font-score {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+}
+
+.shadow-card {
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.05);
+}
+
+.shadow-sheet {
+  box-shadow: 0 -8px 40px rgb(0 0 0 / 0.15);
+}
+
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* Live match pulse animation */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+.animate-live {
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+
+/* Prediction sheet slide transition helpers */
+.sheet-enter  { transform: translateY(0); }
+.sheet-leave  { transform: translateY(100%); }

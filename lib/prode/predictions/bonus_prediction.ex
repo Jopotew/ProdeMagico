@@ -41,6 +41,9 @@ defmodule Prode.Predictions.BonusPrediction do
       {:top_scorer, %{"player_id" => id}} when is_integer(id) ->
         changeset
 
+      {:top_scorer, %{"player_name" => name}} when is_binary(name) and name != "" ->
+        changeset
+
       {:group_winner, %{"group" => g, "team_id" => id}} when is_binary(g) and is_integer(id) ->
         changeset
 

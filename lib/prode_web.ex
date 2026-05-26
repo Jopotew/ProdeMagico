@@ -17,7 +17,7 @@ defmodule ProdeWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
+  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt manifest.json sw.js)
 
   def router do
     quote do
@@ -84,8 +84,9 @@ defmodule ProdeWeb do
 
       # HTML escaping functionality
       import Phoenix.HTML
-      # Core UI components
+      # Core UI components and app-specific UI components
       import ProdeWeb.CoreComponents
+      import ProdeWeb.UIComponents
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS
